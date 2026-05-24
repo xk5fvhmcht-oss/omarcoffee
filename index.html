@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="artisan">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Omar Coffee">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#fdf8f0">
+<meta name="description" content="A pour over coffee calculator, with feeling. By Omar.">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<title>Omar Coffee — Pour Over</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,300;1,9..144,500&family=DM+Mono:wght@300;400&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ─── ARTISAN THEME ─────────────────────────────────── */
+:root {
+  --bg: #fdf8f0;
+  --card: #f7f0e3;
+  --border: #efe6d3;
+  --ink: #2d2418;
+  --ink2: #5c4d38;
+  --ink3: #9c8b72;
+  --accent: #c17b3a;
+  --accent-lt: #e8c99a;
+  --accent-f: rgba(193,123,58,0.10);
+  --teal: #2d7d72;
+  --teal-f: rgba(45,125,114,0.10);
+  --rose: #b85c5c;
+  --rose-f: rgba(184,92,92,0.10);
+  --coffee: #6b3a2a;
+  --coffee-f: rgba(107,58,42,0.10);
+  --body-font: 'Fraunces', Georgia, serif;
+  --label-font: 'Caveat', cursive;
+  --num-font: 'DM Mono', 'Courier New', monospace;
+  --card-radius: 16px;
+  --btn-radius: 10px;
+  --pill-radius: 20px;
+  --card-border: 1.5px solid var(--border);
+  --shadow: 0 2px 12px rgba(45,36,24,0.08);
+  --shadow-lg: 0 8px 32px rgba(45,36,24,0.14);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--body-font);
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100dvh;
+  overscroll-behavior: none;
+}
+
+/* ─── OFFLINE BADGE ─────────────────────────────────── */
+#offlineBadge {
+  display: none;
+  position: fixed;
+  top: 12px; right: 12px;
+  z-index: 999;
+  background: var(--rose);
+  color: #fff;
+  font-family: var(--num-font);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  padding: 3px 10px;
+  border-radius: var(--pill-radius);
+}
+
+/* ─── SCREEN SYSTEM ─────────────────────────────────── */
+.screen { display: none; min-height: 100dvh; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ─── HEADER ─────────────────────────────────────────── */
+.app-header {
+  padding: 16px 20px 12px;
+  padding-top: calc(16px + var(--safe-top));
+  background: var(--bg);
+  border-bottom: 1.5px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 12px;
+}
+.header-inner { flex: 1; }
+.app-title {
+  font-family: var(--body-font);
+  font-size: 22px;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+  line-height: 1.1;
+}
+.app-title span { color: var(--accent); }
+.app-sub {
+  font-family: var(--label-font);
+  font-size: 13px;
+  color: var(--ink3);
+  margin-top: 2px;
+}
+.btn-icon {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: var(--card-border);
+  background: var(--card);
+  color: var(--ink2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  font-size: 18px;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-icon:hover { background: var(--border); color: var(--ink); }
+.btn-icon:active { transform: scale(0.93); }
+
+/* ─── SCREEN SCROLL AREA ─────────────────────────────── */
+.screen-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0 120px;
+}
+
+/* ─── SECTION ────────────────────────────────────────── */
+.section { padding: 22px 20px 0; }
+.section-label {
+  font-family: var(--label-font);
+  font-size: 1.1rem;
+  color: var(--accent);
+  margin-bottom: 4px;
+  display: flex; align-items: center; gap: 6px;
+}
+.section-hint {
+  font-family: var(--num-font);
+  font-size: 0.7rem;
+  color: var(--ink3);
+  margin-bottom: 14px;
+  letter-spacing: 0.04em;
+}
+
+/* ─── CARD ───────────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  padding: 18px;
+  margin: 14px 20px 0;
+  animation: riseIn 0.4s ease both;
+}
+@keyframes riseIn { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+.card:nth-child(1){animation-delay:0.05s}
+.card:nth-child(2){animation-delay:0.1s}
+.card:nth-child(3){animation-delay:0.15s}
+.card:nth-child(4){animation-delay:0.2s}
+
+/* ─── MODE BUTTONS ───────────────────────────────────── */
+.mode-row { display: flex; gap: 8px; margin-bottom: 4px; }
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mode-btn {
+  flex: 1;
+  padding: 11px 8px;
+  border-radius: var(--btn-radius);
+  border: var(--card-border);
+  background: var(--bg);
+  color: var(--ink2);
+  cursor: pointer;
+  font-family: var(--body-font);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.18s;
+  text-align: center;
+}
+.mode-btn:hover { border-color: var(--accent-lt); color: var(--accent); }
+.mode-btn.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.mode-btn .emoji { display: block; font-size: 1.1rem; margin-bottom: 3px; }
+
+/* ─── PILLS ──────────────────────────────────────────── */
+.pill-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+.pill {
+  padding: 5px 13px;
+  border-radius: var(--pill-radius);
+  border: var(--card-border);
+  background: var(--bg);
+  color: var(--ink2);
+  cursor: pointer;
+  font-family: var(--body-font);
+  font-size: 0.8rem;
+  font-style: italic;
+  transition: all 0.18s;
+}
+.pill:hover { border-color: var(--accent-lt); color: var(--accent); }
+.pill.on { background: var(--accent); color: #fff; border-color: var(--accent); font-style: normal; font-weight: 500; }
+
+/* ─── SLIDERS ─────────────────────────────────────────── */
+.slider-wrap { margin-bottom: 16px; }
+.slider-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.slider-name { font-family: var(--body-font); font-size: 0.83rem; color: var(--ink2); font-style: italic; }
+.slider-val {
+  font-family: var(--num-font);
+  font-size: 0.83rem;
+  color: var(--accent);
+  background: var(--accent-f);
+  padding: 1px 9px;
+  border-radius: var(--pill-radius);
+  transition: transform 0.15s;
+}
+.slider-val.pop { animation: pop 0.2s ease; }
+@keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.2)} 100%{transform:scale(1)} }
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%; height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--card);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: grab;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+input[type=range]::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.15); }
+#yieldSlider { background: linear-gradient(to right, #e8c99a, #c17b3a); }
+#ratioSlider { background: linear-gradient(to right, #c5e8c9, #2d7d72); }
+
+/* ─── YIELD DISPLAY ──────────────────────────────────── */
+.yield-display {
+  background: var(--ink);
+  border-radius: var(--card-radius);
+  padding: 20px;
+  margin: 14px 20px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  animation: riseIn 0.5s ease both;
+}
+.yield-num {
+  text-align: center;
+  padding: 14px 10px;
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--btn-radius);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+.yield-num.primary { background: var(--accent-f); border-color: rgba(193,123,58,0.3); }
+.yield-big {
+  font-family: var(--num-font);
+  font-size: 2rem;
+  color: #fff;
+  line-height: 1;
+  display: block;
+}
+.yield-num.primary .yield-big { color: var(--accent-lt); }
+.yield-unit {
+  font-family: var(--label-font);
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.5);
+  display: block;
+  margin-top: 4px;
+}
+.yield-num.primary .yield-unit { color: rgba(232,201,154,0.7); }
+.yield-label {
+  font-family: var(--num-font);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  display: block;
+  margin-top: 5px;
+}
+.yield-num.primary .yield-label { color: rgba(232,201,154,0.5); }
+
+/* ─── INFO BOX ───────────────────────────────────────── */
+.info-box {
+  border-radius: var(--btn-radius);
+  padding: 10px 14px;
+  font-family: var(--label-font);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin-top: 10px;
+}
+.info-box.teal { background: var(--teal-f); color: var(--teal); border: 1px solid rgba(45,125,114,0.2); }
+.info-box.accent { background: var(--accent-f); color: #7a4510; border: 1px solid rgba(193,123,58,0.25); }
+.info-box.coffee { background: var(--coffee-f); color: var(--coffee); border: 1px solid rgba(107,58,42,0.2); }
+
+/* ─── RECIPE SUMMARY ─────────────────────────────────── */
+.recipe-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.recipe-row:last-child { border-bottom: none; }
+.recipe-name { font-family: var(--body-font); font-size: 0.88rem; color: var(--ink2); font-style: italic; }
+.recipe-val {
+  font-family: var(--num-font);
+  font-size: 0.88rem;
+  color: var(--ink);
+  background: var(--border);
+  padding: 2px 10px;
+  border-radius: var(--pill-radius);
+}
+.recipe-val.accent { background: var(--accent); color: #fff; }
+
+/* ─── POUR PLAN ───────────────────────────────────────── */
+.pour-plan {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pour-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: var(--card-border);
+  border-radius: var(--btn-radius);
+}
+.pour-step-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--ink3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--num-font);
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+.pour-step.bloom .pour-step-num { background: var(--accent); color: #fff; }
+.pour-step-label { font-family: var(--body-font); font-size: 0.85rem; color: var(--ink2); font-style: italic; flex: 1; }
+.pour-step-water {
+  font-family: var(--num-font);
+  font-size: 0.82rem;
+  color: var(--accent);
+  background: var(--accent-f);
+  padding: 2px 8px;
+  border-radius: var(--pill-radius);
+}
+.pour-step-time {
+  font-family: var(--num-font);
+  font-size: 0.72rem;
+  color: var(--ink3);
+}
+
+/* ─── GRIND BADGE ─────────────────────────────────────── */
+.grind-badge {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: var(--card-border);
+  border-radius: var(--btn-radius);
+  margin-top: 10px;
+}
+.grind-number {
+  font-family: var(--num-font);
+  font-size: 2.2rem;
+  color: var(--accent);
+  line-height: 1;
+  flex-shrink: 0;
+}
+.grind-info { flex: 1; }
+.grind-label {
+  font-family: var(--label-font);
+  font-size: 0.92rem;
+  color: var(--ink2);
+  line-height: 1.4;
+}
+.grind-sub {
+  font-family: var(--num-font);
+  font-size: 0.68rem;
+  color: var(--ink3);
+  letter-spacing: 0.05em;
+  margin-top: 3px;
+}
+
+/* ─── BOTTOM CTA ──────────────────────────────────────── */
+.bottom-cta {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  padding: 14px 20px calc(14px + var(--safe-bottom));
+  background: linear-gradient(transparent, var(--bg) 28%);
+  z-index: 9;
+}
+.btn-brew {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--card-radius);
+  padding: 16px;
+  font-family: var(--body-font);
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-style: italic;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: background 0.15s, transform 0.1s;
+  box-shadow: var(--shadow-lg);
+  letter-spacing: -0.02em;
+}
+.btn-brew:hover { background: #a8692e; }
+.btn-brew:active { transform: scale(0.98); }
+.btn-brew-sub { font-size: 0.75rem; opacity: 0.75; font-family: var(--num-font); font-weight: 400; font-style: normal; letter-spacing: 0.04em; }
+
+/* ─── BREW TIMER SCREEN ───────────────────────────────── */
+#timerScreen { background: var(--ink); }
+#timerScreen .app-header {
+  background: var(--ink);
+  border-bottom-color: rgba(255,255,255,0.1);
+}
+#timerScreen .app-title { color: #fff; }
+#timerScreen .app-sub { color: rgba(255,255,255,0.4); }
+#timerScreen .btn-icon {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.6);
+}
+
+.timer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 20px 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── CLOCK ───────────────────────────────────────────── */
+.clock-wrap {
+  text-align: center;
+  padding: 28px 20px 24px;
+}
+.clock-elapsed {
+  font-family: var(--num-font);
+  font-size: 4rem;
+  color: #fff;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  animation: fadeIn 0.4s ease both;
+}
+@keyframes fadeIn { from{opacity:0}to{opacity:1} }
+.clock-sub {
+  font-family: var(--label-font);
+  font-size: 1rem;
+  color: rgba(255,255,255,0.4);
+  margin-top: 8px;
+}
+
+/* ─── CURRENT STEP ────────────────────────────────────── */
+.current-step-card {
+  background: var(--accent);
+  border-radius: var(--card-radius);
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.current-step-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.08), transparent 70%);
+}
+.current-step-label {
+  font-family: var(--label-font);
+  font-size: 1rem;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 6px;
+  position: relative;
+}
+.current-step-name {
+  font-family: var(--body-font);
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-style: italic;
+  color: #fff;
+  line-height: 1.2;
+  position: relative;
+}
+.current-step-water {
+  font-family: var(--num-font);
+  font-size: 1rem;
+  color: rgba(255,255,255,0.8);
+  margin-top: 8px;
+  position: relative;
+}
+.current-step-note {
+  font-family: var(--label-font);
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.6);
+  margin-top: 6px;
+  line-height: 1.4;
+  position: relative;
+}
+
+/* ─── COUNTDOWN RING ──────────────────────────────────── */
+.countdown-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+}
+.countdown-ring-svg { transform: rotate(-90deg); }
+.countdown-ring-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 6; }
+.countdown-ring-fg {
+  fill: none;
+  stroke: var(--accent-lt);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s linear;
+}
+.countdown-center {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.countdown-num {
+  font-family: var(--num-font);
+  font-size: 2rem;
+  color: #fff;
+  line-height: 1;
+}
+.countdown-label {
+  font-family: var(--label-font);
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.4);
+  margin-top: 2px;
+}
+.ring-container {
+  position: relative;
+  width: 140px; height: 140px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ─── STEP LIST ───────────────────────────────────────── */
+.step-list { display: flex; flex-direction: column; gap: 0; }
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--btn-radius);
+  margin-bottom: 4px;
+  transition: all 0.3s;
+}
+.step-item.active {
+  background: rgba(193,123,58,0.2);
+  border: 1px solid rgba(193,123,58,0.3);
+}
+.step-item.done { opacity: 0.35; }
+.step-dot {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: 1.5px solid rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.5);
+  flex-shrink: 0;
+  font-family: var(--num-font);
+  transition: all 0.3s;
+}
+.step-item.active .step-dot { background: var(--accent); border-color: var(--accent); color: #fff; }
+.step-item.done .step-dot { background: var(--teal); border-color: var(--teal); color: #fff; }
+.step-info { flex: 1; }
+.step-name {
+  font-family: var(--body-font);
+  font-size: 0.9rem;
+  font-style: italic;
+  color: rgba(255,255,255,0.7);
+}
+.step-item.active .step-name { color: #fff; font-weight: 500; }
+.step-sub {
+  font-family: var(--num-font);
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.35);
+  margin-top: 2px;
+}
+.step-time {
+  font-family: var(--num-font);
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.35);
+}
+.step-item.active .step-time { color: var(--accent-lt); }
+
+/* ─── TIMER CONTROLS ──────────────────────────────────── */
+.timer-controls {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  padding: 14px 20px calc(14px + var(--safe-bottom));
+  background: linear-gradient(transparent, var(--ink) 28%);
+  display: flex;
+  gap: 10px;
+  z-index: 9;
+}
+.btn-timer {
+  flex: 1;
+  padding: 14px;
+  border-radius: var(--card-radius);
+  border: none;
+  cursor: pointer;
+  font-family: var(--body-font);
+  font-size: 1rem;
+  font-weight: 600;
+  font-style: italic;
+  transition: all 0.15s;
+}
+.btn-timer.primary { background: var(--accent); color: #fff; }
+.btn-timer.primary:hover { background: #a8692e; }
+.btn-timer.secondary {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.12);
+  flex: 0 0 auto;
+  width: 56px;
+}
+.btn-timer.secondary:hover { background: rgba(255,255,255,0.14); }
+.btn-timer:active { transform: scale(0.97); }
+
+/* ─── DONE SCREEN ─────────────────────────────────────── */
+.done-banner {
+  background: var(--teal);
+  border-radius: var(--card-radius);
+  padding: 24px;
+  text-align: center;
+}
+.done-banner h2 {
+  font-family: var(--body-font);
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-style: italic;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.done-banner p {
+  font-family: var(--label-font);
+  font-size: 1rem;
+  color: rgba(255,255,255,0.7);
+}
+
+/* ─── VERSION BADGE ───────────────────────────────────── */
+.version-badge {
+  display: inline-block;
+  font-family: var(--num-font);
+  font-size: 0.62rem;
+  background: var(--border);
+  color: var(--ink3);
+  padding: 2px 8px;
+  border-radius: var(--pill-radius);
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+/* ─── HEADER HERO ─────────────────────────────────────── */
+.calc-hero {
+  padding: 20px 20px 6px;
+  animation: fadeDown 0.5s ease both;
+}
+@keyframes fadeDown { from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)} }
+.calc-hero-eyebrow {
+  font-family: var(--label-font);
+  font-size: 1rem;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+.calc-hero h1 {
+  font-family: var(--body-font);
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 700;
+  font-style: italic;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.calc-hero h1 span { color: var(--accent); }
+.calc-hero-sub {
+  font-family: var(--label-font);
+  font-size: 0.95rem;
+  color: var(--ink3);
+  margin-top: 6px;
+}
+
+/* ─── TOTALS LINE ─────────────────────────────────────── */
+.totals-line {
+  display: flex;
+  gap: 1px;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  margin: 14px 20px 0;
+  box-shadow: var(--shadow);
+  animation: riseIn 0.4s ease both;
+}
+.total-block {
+  flex: 1;
+  padding: 16px 10px;
+  text-align: center;
+  background: var(--card);
+  border: var(--card-border);
+}
+.total-block:first-child { border-radius: var(--card-radius) 0 0 var(--card-radius); border-right: none; }
+.total-block:last-child { border-radius: 0 var(--card-radius) var(--card-radius) 0; border-left: none; }
+.total-block.middle { border-radius: 0; border-right: none; }
+.total-block.highlight { background: var(--ink); border-color: var(--ink); }
+.total-big {
+  font-family: var(--num-font);
+  font-size: 1.6rem;
+  color: var(--ink);
+  line-height: 1;
+  display: block;
+}
+.total-block.highlight .total-big { color: var(--accent-lt); }
+.total-unit {
+  font-family: var(--label-font);
+  font-size: 0.78rem;
+  color: var(--ink3);
+  display: block;
+  margin-top: 3px;
+}
+.total-block.highlight .total-unit { color: rgba(232,201,154,0.6); }
+.total-lbl {
+  font-family: var(--num-font);
+  font-size: 0.6rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-top: 5px;
+  display: block;
+}
+.total-block.highlight .total-lbl { color: rgba(232,201,154,0.4); }
+</style>
+</head>
+<body>
+
+<div id="offlineBadge">OFFLINE</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 1 — CALCULATOR
+═══════════════════════════════════════════ -->
+<div class="screen active" id="calcScreen">
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="app-title">Omar <span>Coffee</span></div>
+      <div class="app-sub">✦ pour over, with feeling ✦</div>
+    </div>
+    <div class="version-badge">v1.0 · V60</div>
+  </header>
+
+  <div class="screen-body" id="calcBody">
+
+    <div class="calc-hero">
+      <div class="calc-hero-eyebrow">Hario V60 · Breville Smart Grinder Pro</div>
+      <h1>I thought carefully<br>about every <span>gram.</span></h1>
+      <div class="calc-hero-sub">Target your cup. I'll handle the math.</div>
+    </div>
+
+    <!-- TOTALS ROW -->
+    <div class="totals-line">
+      <div class="total-block">
+        <span class="total-big" id="totalCoffee">20</span>
+        <span class="total-unit">g coffee</span>
+        <span class="total-lbl">ground</span>
+      </div>
+      <div class="total-block highlight middle">
+        <span class="total-big" id="totalBrew">340</span>
+        <span class="total-unit">g brew water</span>
+        <span class="total-lbl">in kettle</span>
+      </div>
+      <div class="total-block">
+        <span class="total-big" id="totalYield">300</span>
+        <span class="total-unit">g in cup</span>
+        <span class="total-lbl">target yield</span>
+      </div>
+    </div>
+
+    <!-- CARD 1: Yield + Ratio -->
+    <div class="card">
+      <div class="section-label">☕ How much do you want to drink?</div>
+      <div class="section-hint">TARGET YIELD — WHAT ENDS UP IN YOUR CUP</div>
+
+      <div class="slider-wrap">
+        <div class="slider-head">
+          <span class="slider-name">cup yield</span>
+          <span class="slider-val" id="yieldVal">300 g</span>
+        </div>
+        <input type="range" id="yieldSlider" min="150" max="600" step="10" value="300">
+      </div>
+      <div class="pill-row">
+        <button class="pill" onclick="setYield(200)">200g · espresso-style</button>
+        <button class="pill on" id="quickPill300" onclick="setYield(300)">300g · mug</button>
+        <button class="pill" onclick="setYield(450)">450g · large</button>
+      </div>
+
+      <div class="slider-wrap" style="margin-top:16px;">
+        <div class="slider-head">
+          <span class="slider-name">ratio (coffee : water)</span>
+          <span class="slider-val" id="ratioVal">1 : 15</span>
+        </div>
+        <input type="range" id="ratioSlider" min="13" max="18" step="0.5" value="15">
+      </div>
+      <div class="pill-row">
+        <button class="pill" onclick="setRatio(13)">1:13 · strong</button>
+        <button class="pill on" id="ratioPill15" onclick="setRatio(15)">1:15 · balanced</button>
+        <button class="pill" onclick="setRatio(17)">1:17 · delicate</button>
+      </div>
+
+      <div class="info-box accent" style="margin-top:12px;" id="retentionNote">
+        <strong>Why brew water ≠ cup yield:</strong> V60 grounds absorb roughly 2× their weight in water. With <span id="retentionCoffee">20</span>g coffee, ~<span id="retentionLoss">40</span>g stays in the puck. So you brew <span id="retentionBrew">340</span>g to get <span id="retentionYield">300</span>g in the cup.
+      </div>
+    </div>
+
+    <!-- CARD 2: Brew Method -->
+    <div class="card">
+      <div class="section-label">🫗 Brew method</div>
+      <div class="section-hint">CHOOSE YOUR TECHNIQUE</div>
+
+      <div class="mode-grid" style="margin-bottom:12px;">
+        <button class="mode-btn on" id="methodClassic" onclick="setMethod('classic')">
+          <span class="emoji">4️⃣</span>Classic 4-Pour
+          <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">bloom + 3 pours</small>
+        </button>
+        <button class="mode-btn" id="methodFoursix" onclick="setMethod('foursix')">
+          <span class="emoji">⚖️</span>Four-Six
+          <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">Kasuya · dial flavor</small>
+        </button>
+      </div>
+
+      <!-- Four-Six flavor controls (hidden by default) -->
+      <div id="foursixControls" style="display:none;">
+        <div class="section-hint" style="margin-bottom:8px;">FIRST 40% — SWEETNESS & ACIDITY</div>
+        <div class="mode-row" style="margin-bottom:12px;">
+          <button class="mode-btn" id="fs46Sweeter" onclick="setFoursixBalance('sweeter')">
+            <span class="emoji">🍯</span>Sweeter
+          </button>
+          <button class="mode-btn on" id="fs46Balanced" onclick="setFoursixBalance('balanced')">
+            <span class="emoji">⚖️</span>Balanced
+          </button>
+          <button class="mode-btn" id="fs46Acidity" onclick="setFoursixBalance('acidity')">
+            <span class="emoji">🍋</span>Acidity
+          </button>
+        </div>
+        <div class="section-hint" style="margin-bottom:8px;">LAST 60% — STRENGTH</div>
+        <div class="mode-row">
+          <button class="mode-btn" id="fs46Light" onclick="setFoursixStrength('light')">
+            <span class="emoji">☁️</span>Lighter
+            <small style="display:block;font-size:0.68rem;opacity:0.6;">2 pours</small>
+          </button>
+          <button class="mode-btn on" id="fs46Medium" onclick="setFoursixStrength('medium')">
+            <span class="emoji">☕</span>Medium
+            <small style="display:block;font-size:0.68rem;opacity:0.6;">3 pours</small>
+          </button>
+          <button class="mode-btn" id="fs46Strong" onclick="setFoursixStrength('strong')">
+            <span class="emoji">💪</span>Stronger
+            <small style="display:block;font-size:0.68rem;opacity:0.6;">4 pours</small>
+          </button>
+        </div>
+        <div class="info-box teal" style="margin-top:10px;">
+          Tetsu Kasuya's 2016 World Brewers Cup method. First 40% of water sets flavor balance; last 60% sets strength. Coarser grind, slightly lower temp.
+        </div>
+      </div>
+
+      <!-- Pour plan display -->
+      <div class="section-hint" style="margin-top:14px;margin-bottom:8px;">POUR PLAN</div>
+      <div class="pour-plan" id="pourPlan"></div>
+    </div>
+
+    <!-- CARD 3: Roast & Grind -->
+    <div class="card">
+      <div class="section-label">🌱 Roast level</div>
+      <div class="section-hint">AFFECTS TEMP & GRIND RECOMMENDATION</div>
+
+      <div class="mode-row" style="margin-bottom:14px;">
+        <button class="mode-btn" id="roastLight" onclick="setRoast('light')">
+          <span class="emoji">🌿</span>Light
+        </button>
+        <button class="mode-btn on" id="roastMedium" onclick="setRoast('medium')">
+          <span class="emoji">☕</span>Medium
+        </button>
+        <button class="mode-btn" id="roastDark" onclick="setRoast('dark')">
+          <span class="emoji">🌑</span>Dark
+        </button>
+      </div>
+
+      <div class="section-hint" style="margin-bottom:6px;">BREVILLE SMART GRINDER PRO — GRIND SETTING</div>
+      <div class="grind-badge">
+        <div class="grind-number" id="grindNumber">50</div>
+        <div class="grind-info">
+          <div class="grind-label" id="grindLabel">Start here. Adjust finer if extraction is weak or sour, coarser if bitter or over-extracted.</div>
+          <div class="grind-sub" id="grindSub">SETTING 50 OF 60 · MEDIUM-COARSE</div>
+        </div>
+      </div>
+
+      <div class="section-hint" style="margin-top:14px;margin-bottom:6px;">WATER TEMPERATURE</div>
+      <div class="info-box teal" id="tempAdvice">
+        <strong id="tempDegrees">93°C / 200°F</strong> — Medium roast. Off the boil, rest your kettle 30–45 seconds. Off the base, your kettle loses ~1–2°C per minute — pour within 2 minutes.
+      </div>
+    </div>
+
+    <!-- CARD 4: Bloom -->
+    <div class="card">
+      <div class="section-label">🌸 Bloom</div>
+      <div class="section-hint">PRE-INFUSION — DEGASSES THE COFFEE</div>
+
+      <div class="slider-wrap">
+        <div class="slider-head">
+          <span class="slider-name">bloom duration</span>
+          <span class="slider-val" id="bloomVal">30 s</span>
+        </div>
+        <input type="range" id="bloomSlider" min="20" max="60" step="5" value="30">
+      </div>
+      <div class="pill-row">
+        <button class="pill" onclick="setBloom(30)">30s · standard</button>
+        <button class="pill" onclick="setBloom(45)">45s · fresh beans</button>
+      </div>
+
+      <div class="info-box coffee" style="margin-top:10px;">
+        Bloom water = 2× coffee weight (<span id="bloomWater">40</span>g). Pour slowly in concentric circles, saturating all grounds. Fresh beans will bloom dramatically — that's CO₂ releasing. Older beans bloom less; that's fine.
+      </div>
+    </div>
+
+  </div><!-- /screen-body -->
+
+  <div class="bottom-cta">
+    <button class="btn-brew" onclick="startBrew()">
+      <span>Start Brewing</span>
+      <span class="btn-brew-sub" id="brewBtnSub">V60 · 4-pour · 300g yield</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 2 — BREW TIMER
+═══════════════════════════════════════════ -->
+<div class="screen" id="timerScreen">
+  <header class="app-header">
+    <button class="btn-icon" onclick="goBack()" title="Back">←</button>
+    <div class="header-inner" style="text-align:center;">
+      <div class="app-title">Brewing <span>now</span></div>
+      <div class="app-sub" id="timerHeaderSub">V60 · 4-pour</div>
+    </div>
+    <div class="btn-icon" id="timerSoundBtn" onclick="toggleSound()" title="Sound">🔔</div>
+  </header>
+
+  <div class="timer-body" id="timerBody">
+
+    <div class="clock-wrap">
+      <div class="clock-elapsed" id="clockElapsed">0:00</div>
+      <div class="clock-sub" id="clockSub">tap Start to begin</div>
+    </div>
+
+    <!-- current step card -->
+    <div class="current-step-card" id="currentStepCard">
+      <div class="current-step-label">current step</div>
+      <div class="current-step-name" id="currentStepName">Ready</div>
+      <div class="current-step-water" id="currentStepWater"></div>
+      <div class="current-step-note" id="currentStepNote">Press Start when ready</div>
+    </div>
+
+    <!-- countdown ring -->
+    <div class="countdown-wrap">
+      <div class="ring-container">
+        <svg class="countdown-ring-svg" width="140" height="140" viewBox="0 0 140 140">
+          <circle class="countdown-ring-bg" cx="70" cy="70" r="60"/>
+          <circle class="countdown-ring-fg" id="ringFg" cx="70" cy="70" r="60"
+            stroke-dasharray="377" stroke-dashoffset="0"/>
+        </svg>
+        <div class="countdown-center">
+          <div class="countdown-num" id="countdownNum">—</div>
+          <div class="countdown-label" id="countdownLabel">until next pour</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- step list -->
+    <div style="background:rgba(255,255,255,0.04);border-radius:var(--card-radius);padding:14px;">
+      <div class="section-hint" style="color:rgba(255,255,255,0.3);margin-bottom:10px;">ALL STEPS</div>
+      <div class="step-list" id="stepList"></div>
+    </div>
+
+    <!-- running totals -->
+    <div style="background:rgba(255,255,255,0.05);border-radius:var(--card-radius);padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="runningTotals">
+      <div style="text-align:center;">
+        <div style="font-family:var(--num-font);font-size:1.4rem;color:#fff;" id="rtWaterPoured">0</div>
+        <div style="font-family:var(--label-font);font-size:0.78rem;color:rgba(255,255,255,0.35);">g water poured</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-family:var(--num-font);font-size:1.4rem;color:rgba(255,255,255,0.4);" id="rtWaterRemain">—</div>
+        <div style="font-family:var(--label-font);font-size:0.78rem;color:rgba(255,255,255,0.35);">g remaining</div>
+      </div>
+    </div>
+
+    <div id="doneBanner" style="display:none;" class="done-banner">
+      <h2>☕ Enjoy.</h2>
+      <p id="doneSub">Your coffee is ready. Let it cool a moment.</p>
+    </div>
+
+  </div><!-- /timer-body -->
+
+  <div class="timer-controls" id="timerControls">
+    <button class="btn-timer secondary" onclick="resetBrew()" title="Reset">↺</button>
+    <button class="btn-timer primary" id="timerStartBtn" onclick="toggleTimer()">Start</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+const state = {
+  yield: 300,       // g in cup (target)
+  ratio: 15,        // 1:N
+  method: 'classic',
+  roast: 'medium',
+  bloomDuration: 30,
+  foursixBalance: 'balanced', // sweeter | balanced | acidity
+  foursixStrength: 'medium',  // light | medium | strong
+  soundOn: true,
+};
+
+// Derived
+function coffeeWeight() {
+  // brew water = yield + retention(2×coffee)
+  // yield = brew - 2×coffee
+  // brew = coffee × ratio
+  // yield = coffee×ratio - 2×coffee = coffee×(ratio-2)
+  return Math.round(state.yield / (state.ratio - 2));
+}
+function brewWater() {
+  return coffeeWeight() * state.ratio;
+}
+function retentionLoss() {
+  return coffeeWeight() * 2;
+}
+
+// ═══════════════════════════════════════════
+// GRIND + TEMP DATA
+// ═══════════════════════════════════════════
+const GRIND = {
+  classic: { light: 52, medium: 50, dark: 48 },
+  foursix: { light: 54, medium: 52, dark: 50 }, // Kasuya uses coarser
+};
+const TEMP = {
+  light:  { c: 96, f: 205, note: 'Light roast. Use near-boiling water — higher temp extracts delicate aromatics.' },
+  medium: { c: 93, f: 200, note: 'Medium roast. Off the boil, rest 30–45 seconds. Off the base, you lose ~1–2°C/min — pour within 2 minutes.' },
+  dark:   { c: 91, f: 196, note: 'Dark roast. Let the kettle cool ~90 seconds. Lower temp reduces harsh, bitter compounds.' },
+};
+const GRIND_DESC = {
+  52: 'Coarse. Four-Six method — Kasuya uses a coarser grind to slow extraction deliberately.',
+  54: 'Extra coarse. Four-Six, light roast. The lower temp + coarse grind balance light roast acidity.',
+  50: 'Medium-coarse. Classic V60 starting point for medium roast. Adjust finer if sour, coarser if bitter.',
+  48: 'Medium. Slightly finer for dark roast — shorter contact time needed to avoid over-extraction.',
+  51: 'Medium-coarse.',
+  53: 'Coarse.',
+  49: 'Medium.',
+};
+
+// ═══════════════════════════════════════════
+// POUR PLAN BUILDER
+// ═══════════════════════════════════════════
+function buildPourPlan() {
+  const coffee = coffeeWeight();
+  const brew = brewWater();
+  const bloom = coffee * 2;
+  const remaining = brew - bloom;
+  const steps = [];
+
+  if (state.method === 'classic') {
+    // Bloom + 3 even pours
+    const pour1 = Math.round(remaining * 0.45);
+    const pour2 = Math.round(remaining * 0.30);
+    const pour3 = remaining - pour1 - pour2;
+    steps.push({ label: 'Bloom', water: bloom, time: 0, duration: state.bloomDuration, note: 'Saturate all grounds slowly', isBloom: true });
+    steps.push({ label: 'Pour 1', water: pour1, time: state.bloomDuration, duration: 40, note: 'Centre outward, slow spiral' });
+    steps.push({ label: 'Pour 2', water: pour2, time: state.bloomDuration + 40, duration: 35, note: 'Keep it centred' });
+    steps.push({ label: 'Pour 3', water: pour3, time: state.bloomDuration + 75, duration: 40, note: 'Final pour, let it drain' });
+  } else {
+    // Four-Six method
+    const first40 = Math.round(brew * 0.40);
+    const last60 = brew - first40;
+
+    let p1, p2;
+    if (state.foursixBalance === 'sweeter') {
+      p1 = Math.round(first40 * 0.40); p2 = first40 - p1;
+    } else if (state.foursixBalance === 'acidity') {
+      p1 = Math.round(first40 * 0.60); p2 = first40 - p1;
+    } else {
+      p1 = Math.round(first40 * 0.50); p2 = first40 - p1;
+    }
+
+    let lastPours = [];
+    if (state.foursixStrength === 'light') {
+      const h = Math.round(last60 / 2);
+      lastPours = [h, last60 - h];
+    } else if (state.foursixStrength === 'strong') {
+      const q = Math.round(last60 / 4);
+      lastPours = [q, q, q, last60 - q*3];
+    } else {
+      const t = Math.round(last60 / 3);
+      lastPours = [t, t, last60 - t*2];
+    }
+
+    let t = 0;
+    steps.push({ label: 'Pour 1', water: p1, time: t, duration: 45, note: 'First 40%: flavor balance', isBloom: true });
+    t += 45;
+    steps.push({ label: 'Pour 2', water: p2, time: t, duration: 45, note: 'First 40% complete' });
+    t += 45;
+    lastPours.forEach((w, i) => {
+      steps.push({ label: `Pour ${i+3}`, water: w, time: t, duration: 45, note: i === 0 ? 'Last 60%: strength' : 'Wait for bed to drain' });
+      t += 45;
+    });
+  }
+
+  return steps;
+}
+
+// ═══════════════════════════════════════════
+// RENDER CALCULATOR
+// ═══════════════════════════════════════════
+function renderCalc() {
+  const coffee = coffeeWeight();
+  const brew = brewWater();
+  const loss = retentionLoss();
+
+  document.getElementById('totalCoffee').textContent = coffee;
+  document.getElementById('totalBrew').textContent = brew;
+  document.getElementById('totalYield').textContent = state.yield;
+
+  document.getElementById('retentionCoffee').textContent = coffee;
+  document.getElementById('retentionLoss').textContent = loss;
+  document.getElementById('retentionBrew').textContent = brew;
+  document.getElementById('retentionYield').textContent = state.yield;
+  document.getElementById('bloomWater').textContent = coffee * 2;
+
+  // Grind
+  const grind = GRIND[state.method][state.roast];
+  document.getElementById('grindNumber').textContent = grind;
+  const coarseness = grind >= 53 ? 'COARSE' : grind >= 50 ? 'MEDIUM-COARSE' : 'MEDIUM';
+  document.getElementById('grindSub').textContent = `SETTING ${grind} OF 60 · ${coarseness}`;
+  document.getElementById('grindLabel').textContent = GRIND_DESC[grind] || 'Start here and adjust based on taste.';
+
+  // Temp
+  const t = TEMP[state.roast];
+  document.getElementById('tempDegrees').textContent = `${t.c}°C / ${t.f}°F`;
+  document.getElementById('tempAdvice').innerHTML = `<strong>${t.c}°C / ${t.f}°F</strong> — ${t.note}`;
+
+  // Pour plan
+  const steps = buildPourPlan();
+  const plan = document.getElementById('pourPlan');
+  plan.innerHTML = '';
+  let cumulative = 0;
+  steps.forEach((s, i) => {
+    cumulative += s.water;
+    const el = document.createElement('div');
+    el.className = 'pour-step' + (s.isBloom ? ' bloom' : '');
+    const mins = Math.floor(s.time / 60);
+    const secs = s.time % 60;
+    const tStr = mins > 0 ? `${mins}:${String(secs).padStart(2,'0')}` : `0:${String(secs).padStart(2,'0')}`;
+    el.innerHTML = `
+      <div class="pour-step-num">${i+1}</div>
+      <div class="pour-step-label">${s.label}${s.note ? ` — <em style="opacity:0.6;font-size:0.8em;">${s.note}</em>` : ''}</div>
+      <div class="pour-step-water">${s.water}g</div>
+      <div class="pour-step-time">@ ${tStr}</div>
+    `;
+    plan.appendChild(el);
+  });
+
+  // Brew button sub
+  const methodLabel = state.method === 'classic' ? '4-pour' : 'Four-Six';
+  document.getElementById('brewBtnSub').textContent = `V60 · ${methodLabel} · ${state.yield}g yield`;
+}
+
+// ═══════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════
+function setYield(v) {
+  state.yield = v;
+  document.getElementById('yieldSlider').value = v;
+  document.getElementById('yieldVal').textContent = v + ' g';
+  popAnim('yieldVal');
+  ['200','300','450'].forEach(n => document.getElementById('quickPill'+n)?.classList.remove('on'));
+  const pill = document.getElementById('quickPill'+v);
+  if (pill) pill.classList.add('on');
+  renderCalc();
+}
+function setRatio(v) {
+  state.ratio = v;
+  document.getElementById('ratioSlider').value = v;
+  document.getElementById('ratioVal').textContent = '1 : ' + v;
+  popAnim('ratioVal');
+  [13,15,17].forEach(n => document.getElementById('ratioPill'+n)?.classList.remove('on'));
+  const pill = document.getElementById('ratioPill'+v);
+  if (pill) pill.classList.add('on');
+  renderCalc();
+}
+function setMethod(m) {
+  state.method = m;
+  document.getElementById('methodClassic').classList.toggle('on', m === 'classic');
+  document.getElementById('methodFoursix').classList.toggle('on', m === 'foursix');
+  document.getElementById('foursixControls').style.display = m === 'foursix' ? 'block' : 'none';
+  renderCalc();
+}
+function setRoast(r) {
+  state.roast = r;
+  ['Light','Medium','Dark'].forEach(n => document.getElementById('roast'+n).classList.remove('on'));
+  document.getElementById('roast'+r[0].toUpperCase()+r.slice(1)).classList.add('on');
+  renderCalc();
+}
+function setBloom(s) {
+  state.bloomDuration = s;
+  document.getElementById('bloomSlider').value = s;
+  document.getElementById('bloomVal').textContent = s + ' s';
+  renderCalc();
+}
+function setFoursixBalance(b) {
+  state.foursixBalance = b;
+  ['Sweeter','Balanced','Acidity'].forEach(n => document.getElementById('fs46'+n).classList.remove('on'));
+  document.getElementById('fs46'+b[0].toUpperCase()+b.slice(1)).classList.add('on');
+  renderCalc();
+}
+function setFoursixStrength(s) {
+  state.foursixStrength = s;
+  ['Light','Medium','Strong'].forEach(n => document.getElementById('fs46'+n).classList.remove('on'));
+  document.getElementById('fs46'+s[0].toUpperCase()+s.slice(1)).classList.add('on');
+  renderCalc();
+}
+function popAnim(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+}
+
+// ─── Slider listeners ────────────────────
+document.getElementById('yieldSlider').addEventListener('input', e => {
+  state.yield = +e.target.value;
+  document.getElementById('yieldVal').textContent = state.yield + ' g';
+  popAnim('yieldVal');
+  ['200','300','450'].forEach(n => document.getElementById('quickPill'+n)?.classList.remove('on'));
+  renderCalc();
+});
+document.getElementById('ratioSlider').addEventListener('input', e => {
+  state.ratio = +e.target.value;
+  document.getElementById('ratioVal').textContent = '1 : ' + state.ratio;
+  popAnim('ratioVal');
+  [13,15,17].forEach(n => document.getElementById('ratioPill'+n)?.classList.remove('on'));
+  renderCalc();
+});
+document.getElementById('bloomSlider').addEventListener('input', e => {
+  state.bloomDuration = +e.target.value;
+  document.getElementById('bloomVal').textContent = state.bloomDuration + ' s';
+  renderCalc();
+});
+
+// ═══════════════════════════════════════════
+// BREW TIMER
+// ═══════════════════════════════════════════
+let brewSteps = [];
+let timerInterval = null;
+let timerRunning = false;
+let elapsed = 0;
+let currentStepIdx = 0;
+let stepElapsed = 0;
+
+function startBrew() {
+  brewSteps = buildPourPlan();
+  elapsed = 0;
+  currentStepIdx = 0;
+  stepElapsed = 0;
+  timerRunning = false;
+
+  const methodLabel = state.method === 'classic' ? '4-pour' : 'Four-Six';
+  document.getElementById('timerHeaderSub').textContent = `V60 · ${methodLabel}`;
+
+  renderTimerScreen();
+  showScreen('timerScreen');
+}
+
+function goBack() {
+  if (timerRunning) {
+    timerRunning = false;
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  showScreen('calcScreen');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function toggleTimer() {
+  if (timerRunning) {
+    // Pause
+    timerRunning = false;
+    clearInterval(timerInterval);
+    timerInterval = null;
+    document.getElementById('timerStartBtn').textContent = 'Resume';
+  } else {
+    timerRunning = true;
+    document.getElementById('timerStartBtn').textContent = 'Pause';
+    timerInterval = setInterval(tick, 1000);
+  }
+}
+
+function resetBrew() {
+  timerRunning = false;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  elapsed = 0;
+  currentStepIdx = 0;
+  stepElapsed = 0;
+  document.getElementById('timerStartBtn').textContent = 'Start';
+  document.getElementById('doneBanner').style.display = 'none';
+  document.getElementById('timerControls').style.display = 'flex';
+  renderTimerScreen();
+}
+
+function tick() {
+  elapsed++;
+  stepElapsed++;
+
+  const step = brewSteps[currentStepIdx];
+  if (stepElapsed >= step.duration && currentStepIdx < brewSteps.length - 1) {
+    currentStepIdx++;
+    stepElapsed = 0;
+    playChime();
+  }
+
+  // Check done
+  const totalTime = brewSteps.reduce((a, s) => a + s.duration, 0);
+  if (elapsed >= totalTime) {
+    timerRunning = false;
+    clearInterval(timerInterval);
+    timerInterval = null;
+    playDone();
+    document.getElementById('doneBanner').style.display = 'block';
+    document.getElementById('doneSub').textContent = `${state.yield}g brewed. Let it cool a moment — flavors develop as it drops to ~70°C.`;
+    document.getElementById('timerControls').style.display = 'none';
+  }
+
+  renderTimerScreen();
+}
+
+function renderTimerScreen() {
+  // Elapsed clock
+  const m = Math.floor(elapsed / 60);
+  const s = elapsed % 60;
+  document.getElementById('clockElapsed').textContent = `${m}:${String(s).padStart(2,'0')}`;
+  document.getElementById('clockSub').textContent = timerRunning ? 'brewing' : (elapsed > 0 ? 'paused' : 'tap Start to begin');
+
+  // Current step
+  if (currentStepIdx < brewSteps.length) {
+    const step = brewSteps[currentStepIdx];
+    document.getElementById('currentStepName').textContent = step.label;
+    document.getElementById('currentStepWater').textContent = `Pour ${step.water}g water`;
+    document.getElementById('currentStepNote').textContent = step.note || '';
+
+    // Countdown ring
+    const remaining = step.duration - stepElapsed;
+    document.getElementById('countdownNum').textContent = remaining;
+    document.getElementById('countdownLabel').textContent = 'seconds';
+    const circumference = 377; // 2π×60
+    const offset = circumference * (1 - remaining / step.duration);
+    document.getElementById('ringFg').style.strokeDashoffset = offset;
+  }
+
+  // Step list
+  const list = document.getElementById('stepList');
+  list.innerHTML = '';
+  let cumWater = 0;
+  brewSteps.forEach((step, i) => {
+    cumWater += step.water;
+    const el = document.createElement('div');
+    el.className = 'step-item' + (i === currentStepIdx ? ' active' : '') + (i < currentStepIdx ? ' done' : '');
+    const mins = Math.floor(step.time / 60);
+    const secs = step.time % 60;
+    const tStr = `${mins}:${String(secs).padStart(2,'0')}`;
+    el.innerHTML = `
+      <div class="step-dot">${i < currentStepIdx ? '✓' : i+1}</div>
+      <div class="step-info">
+        <div class="step-name">${step.label}</div>
+        <div class="step-sub">${step.water}g · cumulative ${cumWater}g</div>
+      </div>
+      <div class="step-time">@ ${tStr}</div>
+    `;
+    list.appendChild(el);
+  });
+
+  // Running totals
+  let poured = 0;
+  for (let i = 0; i < currentStepIdx; i++) poured += brewSteps[i].water;
+  if (currentStepIdx < brewSteps.length) poured += 0; // current pour not "done" yet
+  document.getElementById('rtWaterPoured').textContent = poured;
+  document.getElementById('rtWaterRemain').textContent = (brewWater() - poured) + 'g';
+}
+
+// ═══════════════════════════════════════════
+// WEB AUDIO — CHIMES
+// ═══════════════════════════════════════════
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playTone(freq, duration, type = 'sine', volume = 0.4) {
+  if (!state.soundOn) return;
+  try {
+    const ctx = getAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+function playChime() {
+  // Three-note ascending chime
+  setTimeout(() => playTone(523, 0.4), 0);
+  setTimeout(() => playTone(659, 0.4), 150);
+  setTimeout(() => playTone(784, 0.6), 300);
+}
+function playDone() {
+  // Satisfying descending resolution
+  setTimeout(() => playTone(784, 0.5), 0);
+  setTimeout(() => playTone(659, 0.5), 200);
+  setTimeout(() => playTone(523, 0.5), 400);
+  setTimeout(() => playTone(392, 0.8), 600);
+}
+function toggleSound() {
+  state.soundOn = !state.soundOn;
+  document.getElementById('timerSoundBtn').textContent = state.soundOn ? '🔔' : '🔕';
+}
+
+// ═══════════════════════════════════════════
+// SERVICE WORKER
+// ═══════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+window.addEventListener('online', () => { document.getElementById('offlineBadge').style.display = 'none'; });
+window.addEventListener('offline', () => { document.getElementById('offlineBadge').style.display = 'block'; });
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+renderCalc();
+</script>
+</body>
+</html>
