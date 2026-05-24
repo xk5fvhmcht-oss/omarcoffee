@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="#3a1f0f"/>
+
+  <!-- V60 body — cone shape -->
+  <path d="M160 140 L352 140 L296 340 L216 340 Z" fill="#f7f0e3" opacity="0.95"/>
+
+  <!-- V60 cone ridge lines -->
+  <line x1="210" y1="160" x2="220" y2="320" stroke="#c17b3a" stroke-width="5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="256" y1="155" x2="256" y2="325" stroke="#c17b3a" stroke-width="5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="302" y1="160" x2="292" y2="320" stroke="#c17b3a" stroke-width="5" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Rim / collar at top -->
+  <rect x="148" y="128" width="216" height="24" rx="12" fill="#c17b3a"/>
+
+  <!-- Spout / drip tip at bottom -->
+  <path d="M216 340 L246 400 L266 400 L296 340 Z" fill="#f7f0e3" opacity="0.95"/>
+  <ellipse cx="256" cy="400" rx="16" ry="7" fill="#c17b3a" opacity="0.7"/>
+
+  <!-- Steam wisps -->
+  <path d="M220 108 Q224 90 218 72" fill="none" stroke="#e8c99a" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M256 102 Q262 82 256 62" fill="none" stroke="#e8c99a" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M292 108 Q288 90 294 72" fill="none" stroke="#e8c99a" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Base / server suggestion -->
+  <rect x="190" y="410" width="132" height="22" rx="11" fill="#c17b3a" opacity="0.5"/>
+</svg>

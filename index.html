@@ -746,8 +746,233 @@ input[type=range]::-webkit-slider-thumb:active { cursor: grabbing; transform: sc
   margin-top: 5px;
   display: block;
 }
-.total-block.highlight .total-lbl { color: rgba(232,201,154,0.4); }
-</style>
+/* ─── BREW JOURNAL ────────────────────────────────────── */
+#journalScreen { background: var(--bg); }
+.journal-empty {
+  text-align: center;
+  padding: 60px 30px;
+  font-family: var(--label-font);
+  font-size: 1rem;
+  color: var(--ink3);
+  line-height: 1.6;
+}
+.journal-card {
+  background: var(--card);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  margin: 10px 20px 0;
+  overflow: hidden;
+  animation: riseIn 0.3s ease both;
+}
+.journal-card-header {
+  padding: 14px 16px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.journal-card-title {
+  font-family: var(--body-font);
+  font-size: 1rem;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--ink);
+  flex: 1;
+}
+.journal-card-date {
+  font-family: var(--num-font);
+  font-size: 0.68rem;
+  color: var(--ink3);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+.journal-card-meta {
+  padding: 0 16px 10px;
+  font-family: var(--num-font);
+  font-size: 0.72rem;
+  color: var(--ink3);
+  letter-spacing: 0.03em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.journal-meta-tag {
+  background: var(--border);
+  padding: 2px 8px;
+  border-radius: var(--pill-radius);
+  color: var(--ink2);
+}
+.journal-card-notes {
+  padding: 0 16px 12px;
+  font-family: var(--label-font);
+  font-size: 0.92rem;
+  color: var(--ink2);
+  line-height: 1.5;
+  font-style: italic;
+  border-top: 1px dashed var(--border);
+  padding-top: 10px;
+  margin: 0 16px 12px;
+}
+.journal-card-actions {
+  display: flex;
+  gap: 0;
+  border-top: var(--card-border);
+}
+.journal-btn {
+  flex: 1;
+  padding: 10px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--body-font);
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--ink3);
+  transition: background 0.15s, color 0.15s;
+  border-right: var(--card-border);
+}
+.journal-btn:last-child { border-right: none; }
+.journal-btn:hover { background: var(--border); color: var(--ink); }
+.journal-btn.primary { color: var(--accent); font-weight: 600; }
+.journal-btn.primary:hover { background: var(--accent-f); color: var(--accent); }
+.journal-btn.danger:hover { background: var(--rose-f); color: var(--rose); }
+
+/* ─── SAVE MODAL ──────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(45,36,24,0.5);
+  z-index: 100;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  background: var(--bg);
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px calc(24px + var(--safe-bottom));
+  width: 100%;
+  max-width: 480px;
+  animation: slideUp 0.3s ease both;
+}
+@keyframes slideUp { from{transform:translateY(100%)}to{transform:translateY(0)} }
+.modal-title {
+  font-family: var(--body-font);
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.modal-sub {
+  font-family: var(--label-font);
+  font-size: 0.88rem;
+  color: var(--ink3);
+  margin-bottom: 16px;
+}
+.modal-summary {
+  background: var(--card);
+  border: var(--card-border);
+  border-radius: var(--btn-radius);
+  padding: 10px 14px;
+  font-family: var(--num-font);
+  font-size: 0.75rem;
+  color: var(--ink2);
+  letter-spacing: 0.03em;
+  margin-bottom: 14px;
+  line-height: 1.7;
+}
+.modal-label {
+  font-family: var(--label-font);
+  font-size: 0.88rem;
+  color: var(--ink2);
+  margin-bottom: 6px;
+  display: block;
+}
+textarea#brewNotes {
+  width: 100%;
+  min-height: 90px;
+  padding: 10px 12px;
+  border: var(--card-border);
+  border-radius: var(--btn-radius);
+  background: var(--card);
+  font-family: var(--label-font);
+  font-size: 0.95rem;
+  color: var(--ink);
+  resize: vertical;
+  outline: none;
+  margin-bottom: 16px;
+}
+textarea#brewNotes:focus { border-color: var(--accent-lt); }
+.modal-actions { display: flex; gap: 10px; }
+.modal-btn {
+  flex: 1;
+  padding: 13px;
+  border-radius: var(--btn-radius);
+  border: var(--card-border);
+  cursor: pointer;
+  font-family: var(--body-font);
+  font-size: 0.95rem;
+  font-style: italic;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.modal-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.modal-btn.primary:hover { background: #a8692e; }
+.modal-btn.secondary { background: var(--bg); color: var(--ink2); }
+.modal-btn.secondary:hover { background: var(--border); }
+
+/* ─── EXPORT OVERLAY ──────────────────────────────────── */
+.export-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(45,36,24,0.85);
+  z-index: 200;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.export-overlay.open { display: flex; }
+.export-box {
+  background: var(--card);
+  border-radius: var(--card-radius);
+  padding: 20px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.export-text {
+  font-family: var(--num-font);
+  font-size: 0.72rem;
+  color: var(--ink2);
+  line-height: 1.8;
+  white-space: pre-wrap;
+  user-select: all;
+  -webkit-user-select: all;
+}
+.export-hint {
+  font-family: var(--label-font);
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.7);
+  text-align: center;
+  margin-top: 16px;
+}
+.export-close {
+  margin-top: 16px;
+  padding: 12px 32px;
+  border-radius: var(--btn-radius);
+  border: 2px solid rgba(255,255,255,0.3);
+  background: transparent;
+  color: #fff;
+  font-family: var(--body-font);
+  font-size: 0.95rem;
+  font-style: italic;
+  cursor: pointer;
+}
+
 </head>
 <body>
 
@@ -762,7 +987,8 @@ input[type=range]::-webkit-slider-thumb:active { cursor: grabbing; transform: sc
       <div class="app-title">Omar <span>Coffee</span></div>
       <div class="app-sub">✦ brews and enjoys coffee ✦</div>
     </div>
-    <div class="version-badge">v1.2 · V60</div>
+    <button class="btn-icon" onclick="showJournal()" title="Brew Journal">📓</button>
+    <div class="version-badge">v1.3 · V60</div>
   </header>
 
   <div class="screen-body" id="calcBody">
@@ -1063,6 +1289,7 @@ input[type=range]::-webkit-slider-thumb:active { cursor: grabbing; transform: sc
     <div id="doneBanner" style="display:none;" class="done-banner">
       <h2>☕ Drink well.</h2>
       <p id="doneSub">Your coffee is ready. Let it cool a moment.</p>
+      <button onclick="saveBrewPrompt()" style="margin-top:14px;padding:10px 24px;border-radius:var(--btn-radius);border:2px solid rgba(255,255,255,0.4);background:transparent;color:#fff;font-family:var(--body-font);font-size:0.95rem;font-style:italic;cursor:pointer;">Save to journal</button>
     </div>
 
   </div><!-- /timer-body -->
@@ -1608,6 +1835,207 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ═══════════════════════════════════════════
+// BREW JOURNAL
+// ═══════════════════════════════════════════
+const JOURNAL_KEY = 'omarCoffeeJournal';
+const JOURNAL_MAX = 20;
+
+function loadJournal() {
+  try { return JSON.parse(localStorage.getItem(JOURNAL_KEY)) || []; }
+  catch(e) { return []; }
+}
+function saveJournal(entries) {
+  localStorage.setItem(JOURNAL_KEY, JSON.stringify(entries));
+}
+
+function brewSummaryText() {
+  const coffee = coffeeWeight();
+  const brew = brewWater();
+  const yield_ = targetYield();
+  const grind = GRIND[state.method][state.roast];
+  const method = state.method === 'classic' ? '4-pour' : `Four-Six (${state.foursixBalance} / ${state.foursixStrength})`;
+  const inputDesc = state.inputMode === 'cups'
+    ? `${state.cups} cup${state.cups > 1 ? 's' : ''} × ${state.cupSize}cc`
+    : `${coffee}g coffee`;
+  return [
+    `${inputDesc} · 1:${state.ratio}`,
+    `Coffee: ${coffee}g · Brew water: ${brew}g · Cup yield: ~${yield_}g`,
+    `Method: ${method} · Roast: ${state.roast}`,
+    `Grind: ${grind} · Temp: ${TEMP[state.roast].c}°C · Bloom: ${state.bloomDuration}s`,
+  ].join('\n');
+}
+
+function saveBrewPrompt() {
+  document.getElementById('modalSummary').textContent = brewSummaryText();
+  document.getElementById('brewNotes').value = '';
+  document.getElementById('saveModal').classList.add('open');
+}
+
+function closeSaveModal(e) {
+  if (e && e.target !== document.getElementById('saveModal')) return;
+  document.getElementById('saveModal').classList.remove('open');
+}
+
+function confirmSave() {
+  const entries = loadJournal();
+  const notes = document.getElementById('brewNotes').value.trim();
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+  const entry = {
+    id: Date.now(),
+    date: `${dateStr} · ${timeStr}`,
+    summary: brewSummaryText(),
+    notes,
+    // Store full settings for reload
+    settings: {
+      inputMode: state.inputMode,
+      cups: state.cups,
+      cupSize: state.cupSize,
+      coffeeGrams: state.coffeeGrams,
+      ratio: state.ratio,
+      method: state.method,
+      roast: state.roast,
+      bloomDuration: state.bloomDuration,
+      foursixBalance: state.foursixBalance,
+      foursixStrength: state.foursixStrength,
+    }
+  };
+
+  entries.unshift(entry);
+  if (entries.length > JOURNAL_MAX) entries.pop();
+  saveJournal(entries);
+
+  document.getElementById('saveModal').classList.remove('open');
+
+  // Visual confirmation
+  const btn = document.querySelector('.done-banner button');
+  if (btn) { btn.textContent = '✓ Saved'; btn.disabled = true; }
+}
+
+function showJournal() {
+  renderJournal();
+  showScreen('journalScreen');
+}
+
+function renderJournal() {
+  const entries = loadJournal();
+  document.getElementById('journalMeta').textContent =
+    entries.length + ' brew' + (entries.length !== 1 ? 's' : '') + ' saved';
+
+  const list = document.getElementById('journalList');
+  list.innerHTML = '';
+
+  if (entries.length === 0) {
+    list.innerHTML = `<div class="journal-empty">No brews saved yet.<br>Finish a brew and tap "Save to journal".</div>`;
+    return;
+  }
+
+  entries.forEach(entry => {
+    const card = document.createElement('div');
+    card.className = 'journal-card';
+
+    // Parse summary lines for tags
+    const lines = entry.summary.split('\n');
+    const tags = lines.slice(1).map(l => {
+      const parts = l.split('·').map(s => s.trim());
+      return parts.map(p => `<span class="journal-meta-tag">${p}</span>`).join('');
+    }).join('');
+
+    card.innerHTML = `
+      <div class="journal-card-header">
+        <div class="journal-card-title">${lines[0]}</div>
+        <div class="journal-card-date">${entry.date}</div>
+      </div>
+      <div class="journal-card-meta">${tags}</div>
+      ${entry.notes ? `<div class="journal-card-notes">${entry.notes}</div>` : ''}
+      <div class="journal-card-actions">
+        <button class="journal-btn primary" onclick="reloadBrew(${entry.id})">Brew again</button>
+        <button class="journal-btn" onclick="deleteEntry(${entry.id})">Delete</button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function reloadBrew(id) {
+  const entries = loadJournal();
+  const entry = entries.find(e => e.id === id);
+  if (!entry || !entry.settings) return;
+  const s = entry.settings;
+
+  // Restore all state
+  state.inputMode = s.inputMode || 'cups';
+  state.cups = s.cups || 4;
+  state.cupSize = s.cupSize || 250;
+  state.coffeeGrams = s.coffeeGrams || 20;
+  state.ratio = s.ratio || 15;
+  state.method = s.method || 'classic';
+  state.roast = s.roast || 'medium';
+  state.bloomDuration = s.bloomDuration || 30;
+  state.foursixBalance = s.foursixBalance || 'balanced';
+  state.foursixStrength = s.foursixStrength || 'medium';
+
+  // Sync UI controls
+  setInputMode(state.inputMode);
+  document.getElementById('cupsSlider').value = state.cups;
+  document.getElementById('cupsVal').textContent = state.cups;
+  setCupSize(state.cupSize);
+  document.getElementById('coffeeGramsSlider').value = state.coffeeGrams;
+  document.getElementById('coffeeGramsInput').value = state.coffeeGrams;
+  document.getElementById('coffeeGramsVal').textContent = state.coffeeGrams + ' g';
+  document.getElementById('ratioSlider').value = state.ratio;
+  document.getElementById('ratioVal').textContent = '1 : ' + state.ratio;
+  setMethod(state.method);
+  setRoast(state.roast);
+  setBloom(state.bloomDuration);
+  if (state.method === 'foursix') {
+    setFoursixBalance(state.foursixBalance);
+    setFoursixStrength(state.foursixStrength);
+  }
+
+  renderCalc();
+  showScreen('calcScreen');
+}
+
+function deleteEntry(id) {
+  let entries = loadJournal();
+  entries = entries.filter(e => e.id !== id);
+  saveJournal(entries);
+  renderJournal();
+}
+
+function exportJournal() {
+  const entries = loadJournal();
+  if (entries.length === 0) return;
+
+  const lines = ['OMAR COFFEE — BREW JOURNAL', '═'.repeat(36), ''];
+  entries.forEach((e, i) => {
+    lines.push(`BREW ${i + 1} · ${e.date}`);
+    lines.push(e.summary);
+    if (e.notes) lines.push(`Notes: ${e.notes}`);
+    lines.push('');
+  });
+  const text = lines.join('\n');
+
+  // Try clipboard first, fall back to selectable overlay
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('#journalScreen .btn-icon[title="Export"]');
+      if (btn) { const orig = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = orig, 1500); }
+    }).catch(() => showExportOverlay(text));
+  } else {
+    showExportOverlay(text);
+  }
+}
+
+function showExportOverlay(text) {
+  document.getElementById('exportText').textContent = text;
+  document.getElementById('exportOverlay').classList.add('open');
+}
+
+// ═══════════════════════════════════════════
 // SERVICE WORKER
 // ═══════════════════════════════════════════
 if ('serviceWorker' in navigator) {
@@ -1625,5 +2053,47 @@ state.cupSize = 250;
 state.inputMode = 'cups';
 renderCalc();
 </script>
+<!-- ══════════════════════════════════════════
+     SCREEN 3 — BREW JOURNAL
+═══════════════════════════════════════════ -->
+<div class="screen" id="journalScreen">
+  <header class="app-header">
+    <button class="btn-icon" onclick="showScreen('calcScreen')" title="Back">←</button>
+    <div class="header-inner">
+      <div class="app-title">Brew <span>Journal</span></div>
+      <div class="app-sub" id="journalMeta">0 brews saved</div>
+    </div>
+    <button class="btn-icon" onclick="exportJournal()" title="Export">↑</button>
+  </header>
+
+  <div class="screen-body" id="journalBody" style="padding-bottom:40px;">
+    <div id="journalList"></div>
+  </div>
+</div>
+
+<!-- SAVE BREW MODAL -->
+<div class="modal-overlay" id="saveModal" onclick="closeSaveModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-title">Save this brew</div>
+    <div class="modal-sub">How did it taste? What would you change?</div>
+    <div class="modal-summary" id="modalSummary"></div>
+    <label class="modal-label" for="brewNotes">Notes (optional)</label>
+    <textarea id="brewNotes" placeholder="Grind was slightly coarse, next time try 36. Nice bloom. Ratio felt right for this bean…"></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeSaveModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="confirmSave()">Save brew</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT OVERLAY (iOS PWA clipboard fallback) -->
+<div class="export-overlay" id="exportOverlay">
+  <div class="export-box">
+    <div class="export-text" id="exportText"></div>
+  </div>
+  <div class="export-hint">Select all → Copy → paste into Notes</div>
+  <button class="export-close" onclick="document.getElementById('exportOverlay').classList.remove('open')">Done</button>
+</div>
+
 </body>
 </html>
