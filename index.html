@@ -1000,26 +1000,7 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
       <div class="calc-hero-sub">Good coffee isn't complicated. It's just precise.</div>
     </div>
 
-    <!-- TOTALS ROW -->
-    <div class="totals-line">
-      <div class="total-block">
-        <span class="total-big" id="totalCoffee">20</span>
-        <span class="total-unit">g coffee</span>
-        <span class="total-lbl">ground</span>
-      </div>
-      <div class="total-block highlight middle">
-        <span class="total-big" id="totalBrew">340</span>
-        <span class="total-unit">g brew water</span>
-        <span class="total-lbl">in kettle</span>
-      </div>
-      <div class="total-block">
-        <span class="total-big" id="totalYield">300</span>
-        <span class="total-unit">g in cup</span>
-        <span class="total-lbl">target yield</span>
-      </div>
-    </div>
-
-    <!-- CARD 0: How are you brewing? -->
+    <!-- CARD 0: How are you measuring? -->
     <div class="card">
       <div class="section-label">🧮 How are you measuring?</div>
       <div class="section-hint">CHOOSE YOUR INPUT METHOD</div>
@@ -1104,6 +1085,25 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
 
       <div class="info-box accent" style="margin-top:12px;" id="retentionNote">
         <strong>Why brew water ≠ cup yield:</strong> V60 grounds absorb roughly 2× their weight in water. With <span id="retentionCoffee">20</span>g coffee, ~<span id="retentionLoss">40</span>g stays in the puck. So you brew <span id="retentionBrew">340</span>g to get <span id="retentionYield">300</span>g in the cup.
+      </div>
+    </div>
+
+    <!-- TOTALS ROW — output, after inputs -->
+    <div class="totals-line">
+      <div class="total-block">
+        <span class="total-big" id="totalCoffee">20</span>
+        <span class="total-unit">g coffee</span>
+        <span class="total-lbl">ground</span>
+      </div>
+      <div class="total-block highlight middle">
+        <span class="total-big" id="totalBrew">340</span>
+        <span class="total-unit">g brew water</span>
+        <span class="total-lbl">in kettle</span>
+      </div>
+      <div class="total-block">
+        <span class="total-big" id="totalYield">300</span>
+        <span class="total-unit">g in cup</span>
+        <span class="total-lbl">target yield</span>
       </div>
     </div>
 
