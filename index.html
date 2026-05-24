@@ -1690,6 +1690,8 @@ function setBloom(s) {
   state.bloomDuration = s;
   document.getElementById('bloomSlider').value = s;
   document.getElementById('bloomVal').textContent = s + ' s';
+  document.getElementById('bloomPill30')?.classList.toggle('on', s === 30);
+  document.getElementById('bloomPill45')?.classList.toggle('on', s === 45);
   renderCalc();
 }
 function setFoursixBalance(b) {
@@ -1739,6 +1741,8 @@ document.getElementById('ratioSlider').addEventListener('input', e => {
 document.getElementById('bloomSlider').addEventListener('input', e => {
   state.bloomDuration = +e.target.value;
   document.getElementById('bloomVal').textContent = state.bloomDuration + ' s';
+  document.getElementById('bloomPill30')?.classList.toggle('on', state.bloomDuration === 30);
+  document.getElementById('bloomPill45')?.classList.toggle('on', state.bloomDuration === 45);
   renderCalc();
 });
 
