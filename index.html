@@ -989,7 +989,7 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
       <div class="app-sub">✦ brews and enjoys coffee ✦</div>
     </div>
     <button class="btn-icon" onclick="showJournal()" title="Brew Journal">📓</button>
-    <div class="version-badge">v1.4 · V60 + Chemex</div>
+    <div class="version-badge">v1.5 · V60 · Chemex · French Press</div>
   </header>
 
   <div class="screen-body" id="calcBody">
@@ -1004,14 +1004,18 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
     <div class="card">
       <div class="section-label">☕ Brewer</div>
       <div class="section-hint">SELECT YOUR BREWER</div>
-      <div class="mode-grid">
+      <div class="mode-row">
         <button class="mode-btn on" id="brewerV60" onclick="setBrewer('v60')">
           <span class="emoji">🫙</span>Hario V60
-          <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">pour over · cone</small>
+          <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">pour over</small>
         </button>
         <button class="mode-btn" id="brewerChemex" onclick="setBrewer('chemex')">
-          <span class="emoji">⚗️</span>Chemex 8-cup
-          <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">pour over · carafe</small>
+          <span class="emoji">⚗️</span>Chemex
+          <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">pour over</small>
+        </button>
+        <button class="mode-btn" id="brewerFrenchpress" onclick="setBrewer('frenchpress')">
+          <span class="emoji">🧊</span>French Press
+          <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">immersion</small>
         </button>
       </div>
     </div>
@@ -1158,7 +1162,7 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
     <!-- BREW TECHNIQUE + BLOOM CARD -->
     <div class="card">
       <div class="section-label" id="techniqueLabel">🫗 Brew technique</div>
-      <div class="section-hint">POUR METHOD & BLOOM</div>
+      <div class="section-hint" id="techniqueHint">POUR METHOD & BLOOM</div>
 
       <!-- V60 method toggle -->
       <div id="v60Methods">
@@ -1207,32 +1211,54 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
         </div>
       </div>
 
-      <!-- Chemex note (shown when Chemex selected) -->
+      <!-- Chemex note -->
       <div id="chemexNote" style="display:none;">
         <div class="info-box teal" style="margin-bottom:12px;">
           Chemex uses a thicker bonded filter — slower drawdown, coarser grind. Bloom + 2 pours. Total brew time ~5–6 minutes.
         </div>
       </div>
 
-      <!-- Bloom — shared by both brewers -->
-      <div class="section-hint" style="margin-bottom:6px;">BLOOM</div>
-      <div class="slider-wrap">
-        <div class="slider-head">
-          <span class="slider-name">bloom duration</span>
-          <span class="slider-val" id="bloomVal">30 s</span>
+      <!-- French press steep controls -->
+      <div id="frenchpressControls" style="display:none;">
+        <div class="info-box teal" style="margin-bottom:14px;">
+          Immersion brew — all water added at once, coffee steeps, then press. No bloom. Pour immediately after pressing; don't let it sit or it keeps extracting.
         </div>
-        <input type="range" id="bloomSlider" min="20" max="60" step="5" value="30">
-      </div>
-      <div class="pill-row">
-        <button class="pill on" id="bloomPill30" onclick="setBloom(30)">30s · standard</button>
-        <button class="pill" id="bloomPill45" onclick="setBloom(45)">45s · fresh beans</button>
-      </div>
-      <div class="info-box coffee" style="margin-top:10px;">
-        Bloom water = 2× coffee weight (<span id="bloomWater">40</span>g). Saturate all grounds slowly. Fresh beans bloom dramatically — CO₂ releasing. Older beans bloom less; that's fine.
+        <div class="slider-wrap">
+          <div class="slider-head">
+            <span class="slider-name">steep time</span>
+            <span class="slider-val" id="steepVal">4 min</span>
+          </div>
+          <input type="range" id="steepSlider" min="3" max="5" step="0.5" value="4"
+            style="background: linear-gradient(to right, #c5e8c9, #2d7d72);">
+        </div>
+        <div class="pill-row">
+          <button class="pill" id="steepPill3" onclick="setSteep(3)">3 min · light</button>
+          <button class="pill on" id="steepPill4" onclick="setSteep(4)">4 min · classic</button>
+          <button class="pill" id="steepPill5" onclick="setSteep(5)">5 min · strong</button>
+        </div>
       </div>
 
-      <!-- Pour plan -->
-      <div class="section-hint" style="margin-top:14px;margin-bottom:8px;">POUR PLAN</div>
+      <!-- Bloom — pour over brewers only -->
+      <div id="bloomControls">
+        <div class="section-hint" style="margin-bottom:6px;">BLOOM</div>
+        <div class="slider-wrap">
+          <div class="slider-head">
+            <span class="slider-name">bloom duration</span>
+            <span class="slider-val" id="bloomVal">30 s</span>
+          </div>
+          <input type="range" id="bloomSlider" min="20" max="60" step="5" value="30">
+        </div>
+        <div class="pill-row">
+          <button class="pill on" id="bloomPill30" onclick="setBloom(30)">30s · standard</button>
+          <button class="pill" id="bloomPill45" onclick="setBloom(45)">45s · fresh beans</button>
+        </div>
+        <div class="info-box coffee" style="margin-top:10px;">
+          Bloom water = 2× coffee weight (<span id="bloomWater">40</span>g). Saturate all grounds slowly. Fresh beans bloom dramatically — CO₂ releasing. Older beans bloom less; that's fine.
+        </div>
+      </div>
+
+      <!-- Pour plan / steep plan -->
+      <div class="section-hint" style="margin-top:14px;margin-bottom:8px;" id="planLabel">POUR PLAN</div>
       <div class="pour-plan" id="pourPlan"></div>
     </div>
 
@@ -1326,16 +1352,17 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
 // STATE
 // ═══════════════════════════════════════════
 const state = {
-  brewer: 'v60',        // 'v60' | 'chemex'
+  brewer: 'v60',        // 'v60' | 'chemex' | 'frenchpress'
   inputMode: 'cups',
   cups: 4,
   cupSize: 250,
   coffeeGrams: 20,
   yield: 1000,
   ratio: 15,
-  method: 'classic',    // v60 only: 'classic' | 'foursix'
+  method: 'classic',
   roast: 'medium',
   bloomDuration: 30,
+  steepMinutes: 4,      // french press only
   foursixBalance: 'balanced',
   foursixStrength: 'medium',
   soundOn: true,
@@ -1347,26 +1374,32 @@ function targetYield() {
   if (state.inputMode === 'cups') {
     return state.cups * state.cupSize;
   } else {
-    // grams mode: yield = coffee×(ratio−2)
-    return Math.round(state.coffeeGrams * (state.ratio - 2));
+    // grams mode: yield = coffee × (ratio − retentionFactor)
+    const rf = state.brewer === 'frenchpress' ? 1 : 2;
+    return Math.round(state.coffeeGrams * (state.ratio - rf));
   }
 }
 function coffeeWeight() {
   if (state.inputMode === 'grams') return state.coffeeGrams;
-  // cups mode: coffee = yield / (ratio - 2)
-  return Math.round(targetYield() / (state.ratio - 2));
+  // cups mode: coffee = yield / (ratio - retentionFactor)
+  const rf = state.brewer === 'frenchpress' ? 1 : 2;
+  return Math.round(targetYield() / (state.ratio - rf));
 }
 function brewWater() {
   return coffeeWeight() * state.ratio;
 }
 function retentionLoss() {
-  return coffeeWeight() * 2;
+  // French press: metal mesh, much less retention — ~1× coffee weight
+  // V60/Chemex: paper filter, ~2× coffee weight absorbed
+  return state.brewer === 'frenchpress'
+    ? coffeeWeight()
+    : coffeeWeight() * 2;
 }
 
 // ═══════════════════════════════════════════
 // GRIND + TEMP DATA
 // ═══════════════════════════════════════════
-// V60: Omar's real range 36–42. Chemex: coarser due to thick bonded filter.
+// V60: Omar's real range 36–42. Chemex: coarser, bonded filter. French press: coarsest, metal mesh.
 const GRIND = {
   v60: {
     classic: { light: 40, medium: 38, dark: 36 },
@@ -1374,6 +1407,9 @@ const GRIND = {
   },
   chemex: {
     classic: { light: 48, medium: 46, dark: 44 },
+  },
+  frenchpress: {
+    classic: { light: 54, medium: 52, dark: 50 },
   },
 };
 const TEMP = {
@@ -1389,6 +1425,9 @@ const GRIND_DESC = {
   44: 'Medium-coarse. Chemex dark roast — thick bonded filter slows flow, grind coarser than V60.',
   46: 'Coarse. Chemex medium roast. Thicker filter needs a coarser grind to prevent over-extraction.',
   48: 'Coarse. Chemex light roast. Slow drawdown through thick filter, compensated with high temp.',
+  50: 'Coarse. French press dark roast — metal mesh, no filter paper. Grind coarse to avoid muddy cup.',
+  52: 'Coarse. French press medium roast. Large even particles, full immersion, 4-minute steep.',
+  54: 'Extra coarse. French press light roast. Coarsest setting — long immersion needs maximum particle size.',
 };
 
 // ═══════════════════════════════════════════
@@ -1401,7 +1440,13 @@ function buildPourPlan() {
   const remaining = brew - bloom;
   const steps = [];
 
-  if (state.brewer === 'chemex') {
+  if (state.brewer === 'frenchpress') {
+    // French press: pour all at once, stir, steep, press
+    const steepSecs = Math.round(state.steepMinutes * 60);
+    steps.push({ label: 'Pour & stir', water: brew, time: 0, duration: 15, note: 'Add all water, stir gently once', isBloom: true });
+    steps.push({ label: 'Steep', water: 0, time: 15, duration: steepSecs, note: `${state.steepMinutes} min steep — lid on, plunger up` });
+    steps.push({ label: 'Press', water: 0, time: 15 + steepSecs, duration: 25, note: 'Press slowly, 20–25 seconds down' });
+  } else if (state.brewer === 'chemex') {
     // Chemex: bloom + 2 pours, slower drawdown
     const pour1 = Math.round(remaining * 0.60);
     const pour2 = remaining - pour1;
@@ -1482,14 +1527,21 @@ function renderCalc() {
   // Hero eyebrow
   const eyebrow = state.brewer === 'chemex'
     ? 'Chemex 8-cup · Breville Smart Grinder Pro'
+    : state.brewer === 'frenchpress'
+    ? 'French Press · Breville Smart Grinder Pro'
     : 'Hario V60 · Breville Smart Grinder Pro';
   document.getElementById('heroEyebrow').textContent = eyebrow;
 
+  // Retention note — french press retains ~1× coffee weight, not 2×
+  const retFactor = state.brewer === 'frenchpress' ? '1×' : '2×';
+  document.getElementById('retentionNote').innerHTML =
+    `<strong>Why brew water ≠ cup yield:</strong> grounds absorb roughly ${retFactor} their weight in water. With <span id="retentionCoffee">${coffee}</span>g coffee, ~<span id="retentionLoss">${loss}</span>g stays in the grounds. So you brew <span id="retentionBrew">${brew}</span>g to get <span id="retentionYield">${yield_}</span>g in the cup.`;
+
   // Grind — brewer + method aware
-  const methodKey = state.brewer === 'chemex' ? 'classic' : state.method;
+  const methodKey = state.brewer === 'chemex' || state.brewer === 'frenchpress' ? 'classic' : state.method;
   const grind = GRIND[state.brewer][methodKey][state.roast];
   document.getElementById('grindNumber').textContent = grind;
-  const coarseness = grind >= 46 ? 'COARSE' : grind >= 41 ? 'MEDIUM-COARSE' : grind >= 38 ? 'MEDIUM' : 'MEDIUM-FINE';
+  const coarseness = grind >= 52 ? 'EXTRA COARSE' : grind >= 46 ? 'COARSE' : grind >= 41 ? 'MEDIUM-COARSE' : grind >= 38 ? 'MEDIUM' : 'MEDIUM-FINE';
   document.getElementById('grindSub').textContent = `SETTING ${grind} OF 60 · ${coarseness}`;
   document.getElementById('grindLabel').textContent = GRIND_DESC[grind] || 'Start here and adjust based on taste.';
 
@@ -1497,9 +1549,14 @@ function renderCalc() {
   const t = TEMP[state.roast];
   document.getElementById('tempAdvice').innerHTML = `<strong>${t.c}°C / ${t.f}°F</strong> — ${t.note}`;
 
-  // V60/Chemex method UI visibility
+  // Technique card visibility
+  const isFP = state.brewer === 'frenchpress';
   document.getElementById('v60Methods').style.display = state.brewer === 'v60' ? 'block' : 'none';
   document.getElementById('chemexNote').style.display = state.brewer === 'chemex' ? 'block' : 'none';
+  document.getElementById('frenchpressControls').style.display = isFP ? 'block' : 'none';
+  document.getElementById('bloomControls').style.display = isFP ? 'none' : 'block';
+  document.getElementById('techniqueHint').textContent = isFP ? 'IMMERSION · STEEP & PRESS' : 'POUR METHOD & BLOOM';
+  document.getElementById('planLabel').textContent = isFP ? 'STEEP PLAN' : 'POUR PLAN';
 
   // Pour plan
   const steps = buildPourPlan();
@@ -1521,8 +1578,10 @@ function renderCalc() {
   });
 
   // Brew button sub
-  const brewerLabel = state.brewer === 'chemex' ? 'Chemex' : 'V60';
-  const methodLabel = state.brewer === 'chemex' ? 'bloom + 2 pours' : (state.method === 'classic' ? '4-pour' : 'Four-Six');
+  const brewerLabel = state.brewer === 'chemex' ? 'Chemex' : state.brewer === 'frenchpress' ? 'French Press' : 'V60';
+  const methodLabel = state.brewer === 'frenchpress' ? `${state.steepMinutes} min steep`
+    : state.brewer === 'chemex' ? 'bloom + 2 pours'
+    : state.method === 'classic' ? '4-pour' : 'Four-Six';
   const inputLabel = state.inputMode === 'cups'
     ? `${state.cups} cup${state.cups > 1 ? 's' : ''} · ${state.cupSize}cc`
     : `${coffee}g coffee`;
@@ -1538,12 +1597,28 @@ function setBrewer(b) {
   state.brewer = b;
   document.getElementById('brewerV60').classList.toggle('on', b === 'v60');
   document.getElementById('brewerChemex').classList.toggle('on', b === 'chemex');
-  // Chemex defaults to 45s bloom
+  document.getElementById('brewerFrenchpress').classList.toggle('on', b === 'frenchpress');
   if (b === 'chemex') {
     setBloom(45);
+    if (state.cups === 7) setCups(4);
+  } else if (b === 'frenchpress') {
+    state.cups = 7;
+    document.getElementById('cupsSlider').value = 7;
+    document.getElementById('cupsVal').textContent = 7;
   } else {
     setBloom(30);
+    if (state.cups === 7) setCups(4);
   }
+  renderCalc();
+}
+
+// ── Steep time (French press) ──
+function setSteep(m) {
+  state.steepMinutes = m;
+  document.getElementById('steepSlider').value = m;
+  document.getElementById('steepVal').textContent = m + ' min';
+  [3, 4, 5].forEach(n => document.getElementById('steepPill' + n)?.classList.remove('on'));
+  document.getElementById('steepPill' + m)?.classList.add('on');
   renderCalc();
 }
 
@@ -1647,6 +1722,13 @@ document.getElementById('coffeeGramsInput').addEventListener('input', e => {
   const v = Math.min(75, Math.max(15, +e.target.value || 15));
   setCoffeeGrams(v);
 });
+document.getElementById('steepSlider').addEventListener('input', e => {
+  state.steepMinutes = +e.target.value;
+  document.getElementById('steepVal').textContent = state.steepMinutes + ' min';
+  [3, 4, 5].forEach(n => document.getElementById('steepPill' + n)?.classList.remove('on'));
+  document.getElementById('steepPill' + state.steepMinutes)?.classList.add('on');
+  renderCalc();
+});
 document.getElementById('ratioSlider').addEventListener('input', e => {
   state.ratio = +e.target.value;
   document.getElementById('ratioVal').textContent = '1 : ' + state.ratio;
@@ -1677,8 +1759,10 @@ function startBrew() {
   stepElapsed = 0;
   timerRunning = false;
 
-  const brewerLabel = state.brewer === 'chemex' ? 'Chemex' : 'V60';
-  const methodLabel = state.brewer === 'chemex' ? 'bloom + 2 pours' : (state.method === 'classic' ? '4-pour' : 'Four-Six');
+  const brewerLabel = state.brewer === 'chemex' ? 'Chemex' : state.brewer === 'frenchpress' ? 'French Press' : 'V60';
+  const methodLabel = state.brewer === 'frenchpress' ? `${state.steepMinutes} min steep`
+    : state.brewer === 'chemex' ? 'bloom + 2 pours'
+    : state.method === 'classic' ? '4-pour' : 'Four-Six';
   document.getElementById('timerHeaderSub').textContent = `${brewerLabel} · ${methodLabel}`;
 
   renderTimerScreen();
@@ -1912,7 +1996,8 @@ function brewSummaryText() {
   const methodKey = state.brewer === 'chemex' ? 'classic' : state.method;
   const grind = GRIND[state.brewer][methodKey][state.roast];
   const brewerLabel = state.brewer === 'chemex' ? 'Chemex 8-cup' : 'Hario V60';
-  const methodLabel = state.brewer === 'chemex' ? 'bloom + 2 pours'
+  const methodLabel = state.brewer === 'frenchpress' ? `${state.steepMinutes} min steep`
+    : state.brewer === 'chemex' ? 'bloom + 2 pours'
     : state.method === 'classic' ? '4-pour'
     : `Four-Six (${state.foursixBalance} / ${state.foursixStrength})`;
   const inputDesc = state.inputMode === 'cups'
@@ -1960,6 +2045,7 @@ function confirmSave() {
       method: state.method,
       roast: state.roast,
       bloomDuration: state.bloomDuration,
+      steepMinutes: state.steepMinutes,
       foursixBalance: state.foursixBalance,
       foursixStrength: state.foursixStrength,
     }
@@ -2037,6 +2123,7 @@ function reloadBrew(id) {
   state.method = s.method || 'classic';
   state.roast = s.roast || 'medium';
   state.bloomDuration = s.bloomDuration || 30;
+  state.steepMinutes = s.steepMinutes || 4;
   state.foursixBalance = s.foursixBalance || 'balanced';
   state.foursixStrength = s.foursixStrength || 'medium';
 
