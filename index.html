@@ -762,7 +762,7 @@ input[type=range]::-webkit-slider-thumb:active { cursor: grabbing; transform: sc
       <div class="app-title">Omar <span>Coffee</span></div>
       <div class="app-sub">✦ pour over, with feeling ✦</div>
     </div>
-    <div class="version-badge">v1.0 · V60</div>
+    <div class="version-badge">v1.1 · V60</div>
   </header>
 
   <div class="screen-body" id="calcBody">
@@ -792,25 +792,77 @@ input[type=range]::-webkit-slider-thumb:active { cursor: grabbing; transform: sc
       </div>
     </div>
 
-    <!-- CARD 1: Yield + Ratio -->
+    <!-- CARD 0: How are you brewing? -->
     <div class="card">
-      <div class="section-label">☕ How much do you want to drink?</div>
-      <div class="section-hint">TARGET YIELD — WHAT ENDS UP IN YOUR CUP</div>
+      <div class="section-label">🧮 How are you measuring?</div>
+      <div class="section-hint">CHOOSE YOUR INPUT METHOD</div>
+
+      <div class="mode-grid" style="margin-bottom:14px;">
+        <button class="mode-btn on" id="inputModeCups" onclick="setInputMode('cups')">
+          <span class="emoji">🫖</span>By cups
+          <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">cups × cup size</small>
+        </button>
+        <button class="mode-btn" id="inputModeGrams" onclick="setInputMode('grams')">
+          <span class="emoji">⚖️</span>By grams
+          <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">exact coffee weight</small>
+        </button>
+      </div>
+
+      <!-- CUPS MODE -->
+      <div id="cupsMode">
+        <div class="slider-wrap">
+          <div class="slider-head">
+            <span class="slider-name">number of cups</span>
+            <span class="slider-val" id="cupsVal">4</span>
+          </div>
+          <input type="range" id="cupsSlider" min="1" max="7" step="1" value="4">
+        </div>
+        <div class="section-hint" style="margin-bottom:8px;">CUP SIZE</div>
+        <div class="mode-row">
+          <button class="mode-btn" id="cupSizeSmall" onclick="setCupSize(180)">
+            <span class="emoji">🍵</span>Small
+            <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">180 cc</small>
+          </button>
+          <button class="mode-btn on" id="cupSizeStd" onclick="setCupSize(250)">
+            <span class="emoji">☕</span>Standard
+            <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">250 cc</small>
+          </button>
+          <button class="mode-btn" id="cupSizeLarge" onclick="setCupSize(350)">
+            <span class="emoji">🧋</span>Large mug
+            <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">350 cc</small>
+          </button>
+        </div>
+      </div>
+
+      <!-- GRAMS MODE -->
+      <div id="gramsMode" style="display:none;">
+        <div class="slider-wrap">
+          <div class="slider-head">
+            <span class="slider-name">coffee to grind</span>
+            <span class="slider-val" id="coffeeGramsVal">20 g</span>
+          </div>
+          <input type="range" id="coffeeGramsSlider" min="15" max="75" step="1" value="20"
+            style="background: linear-gradient(to right, #c5e8c9, #2d7d72);">
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+          <span class="slider-name" style="white-space:nowrap;">or type exact:</span>
+          <input type="number" id="coffeeGramsInput" min="15" max="75" value="20"
+            style="width:80px;padding:6px 10px;border-radius:var(--btn-radius);border:var(--card-border);
+                   background:var(--bg);font-family:var(--num-font);font-size:1rem;color:var(--accent);text-align:center;">
+          <span class="slider-name">g</span>
+        </div>
+        <div class="info-box coffee" style="margin-top:10px;" id="gramsYieldNote">
+          With 20g coffee at 1:15, you'll brew 300g water and get ~260g in the cup.
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 1: Ratio + retention note -->
+    <div class="card" id="yieldCard">
+      <div class="section-label">☕ Brew summary</div>
+      <div class="section-hint">RATIO & WATER MATH</div>
 
       <div class="slider-wrap">
-        <div class="slider-head">
-          <span class="slider-name">cup yield</span>
-          <span class="slider-val" id="yieldVal">300 g</span>
-        </div>
-        <input type="range" id="yieldSlider" min="150" max="600" step="10" value="300">
-      </div>
-      <div class="pill-row">
-        <button class="pill" onclick="setYield(200)">200g · espresso-style</button>
-        <button class="pill on" id="quickPill300" onclick="setYield(300)">300g · mug</button>
-        <button class="pill" onclick="setYield(450)">450g · large</button>
-      </div>
-
-      <div class="slider-wrap" style="margin-top:16px;">
         <div class="slider-head">
           <span class="slider-name">ratio (coffee : water)</span>
           <span class="slider-val" id="ratioVal">1 : 15</span>
@@ -902,10 +954,10 @@ input[type=range]::-webkit-slider-thumb:active { cursor: grabbing; transform: sc
 
       <div class="section-hint" style="margin-bottom:6px;">BREVILLE SMART GRINDER PRO — GRIND SETTING</div>
       <div class="grind-badge">
-        <div class="grind-number" id="grindNumber">50</div>
+        <div class="grind-number" id="grindNumber">38</div>
         <div class="grind-info">
-          <div class="grind-label" id="grindLabel">Start here. Adjust finer if extraction is weak or sour, coarser if bitter or over-extracted.</div>
-          <div class="grind-sub" id="grindSub">SETTING 50 OF 60 · MEDIUM-COARSE</div>
+          <div class="grind-label" id="grindLabel">Medium. Classic V60 starting point for medium roast. Finer if sour or weak, coarser if bitter.</div>
+          <div class="grind-sub" id="grindSub">SETTING 38 OF 60 · MEDIUM</div>
         </div>
       </div>
 
@@ -1026,23 +1078,34 @@ input[type=range]::-webkit-slider-thumb:active { cursor: grabbing; transform: sc
 // STATE
 // ═══════════════════════════════════════════
 const state = {
-  yield: 300,       // g in cup (target)
-  ratio: 15,        // 1:N
+  inputMode: 'cups',    // 'cups' | 'grams'
+  cups: 4,
+  cupSize: 250,         // cc per cup
+  coffeeGrams: 20,      // used in grams mode — direct coffee weight
+  yield: 1000,          // g in cup (target) — derived, don't set directly
+  ratio: 15,            // 1:N
   method: 'classic',
   roast: 'medium',
   bloomDuration: 30,
-  foursixBalance: 'balanced', // sweeter | balanced | acidity
-  foursixStrength: 'medium',  // light | medium | strong
+  foursixBalance: 'balanced',
+  foursixStrength: 'medium',
   soundOn: true,
 };
 
 // Derived
+// ── Target yield: cups×size (cups mode) OR coffee×ratio−retention (grams mode)
+function targetYield() {
+  if (state.inputMode === 'cups') {
+    return state.cups * state.cupSize;
+  } else {
+    // grams mode: yield = coffee×(ratio−2)
+    return Math.round(state.coffeeGrams * (state.ratio - 2));
+  }
+}
 function coffeeWeight() {
-  // brew water = yield + retention(2×coffee)
-  // yield = brew - 2×coffee
-  // brew = coffee × ratio
-  // yield = coffee×ratio - 2×coffee = coffee×(ratio-2)
-  return Math.round(state.yield / (state.ratio - 2));
+  if (state.inputMode === 'grams') return state.coffeeGrams;
+  // cups mode: coffee = yield / (ratio - 2)
+  return Math.round(targetYield() / (state.ratio - 2));
 }
 function brewWater() {
   return coffeeWeight() * state.ratio;
@@ -1054,23 +1117,25 @@ function retentionLoss() {
 // ═══════════════════════════════════════════
 // GRIND + TEMP DATA
 // ═══════════════════════════════════════════
+// Grind settings: BCG820 filter zone is 31–50. V60 sits in the middle.
+// Omar's real range is 36–42 — that's the anchor. One source said 50 (French press territory) — wrong.
 const GRIND = {
-  classic: { light: 52, medium: 50, dark: 48 },
-  foursix: { light: 54, medium: 52, dark: 50 }, // Kasuya uses coarser
+  classic: { light: 40, medium: 38, dark: 36 },
+  foursix: { light: 42, medium: 40, dark: 38 }, // Kasuya: coarser grind intentionally
 };
 const TEMP = {
-  light:  { c: 96, f: 205, note: 'Light roast. Use near-boiling water — higher temp extracts delicate aromatics.' },
-  medium: { c: 93, f: 200, note: 'Medium roast. Off the boil, rest 30–45 seconds. Off the base, you lose ~1–2°C/min — pour within 2 minutes.' },
-  dark:   { c: 91, f: 196, note: 'Dark roast. Let the kettle cool ~90 seconds. Lower temp reduces harsh, bitter compounds.' },
+  light:  { c: 96, f: 205, note: 'Light roast. Near-boiling water extracts the delicate aromatics that lower temps miss.' },
+  medium: { c: 93, f: 200, note: 'Medium roast. Off the boil, rest 30–45 seconds. Off the base your kettle loses ~1–2°C per minute — pour within 2 minutes.' },
+  dark:   { c: 91, f: 196, note: 'Dark roast. Let the kettle cool ~90 seconds. Lower temp reduces harsh bitter compounds from the roast.' },
 };
 const GRIND_DESC = {
-  52: 'Coarse. Four-Six method — Kasuya uses a coarser grind to slow extraction deliberately.',
-  54: 'Extra coarse. Four-Six, light roast. The lower temp + coarse grind balance light roast acidity.',
-  50: 'Medium-coarse. Classic V60 starting point for medium roast. Adjust finer if sour, coarser if bitter.',
-  48: 'Medium. Slightly finer for dark roast — shorter contact time needed to avoid over-extraction.',
-  51: 'Medium-coarse.',
-  53: 'Coarse.',
-  49: 'Medium.',
+  36: 'Medium. Slightly finer for dark roast — the beans are more soluble, so less contact time needed.',
+  38: 'Medium. Classic V60 starting point for medium roast. Finer if sour or weak, coarser if bitter.',
+  40: 'Medium-coarse. Light roast classic V60, or medium roast Four-Six. Coarser bed slows drawdown.',
+  42: 'Coarse. Four-Six, light roast. Kasuya deliberately uses coarser grind to control extraction speed.',
+  37: 'Medium.',
+  39: 'Medium.',
+  41: 'Medium-coarse.',
 };
 
 // ═══════════════════════════════════════════
@@ -1138,37 +1203,41 @@ function buildPourPlan() {
 function renderCalc() {
   const coffee = coffeeWeight();
   const brew = brewWater();
+  const yield_ = targetYield();
   const loss = retentionLoss();
 
   document.getElementById('totalCoffee').textContent = coffee;
   document.getElementById('totalBrew').textContent = brew;
-  document.getElementById('totalYield').textContent = state.yield;
+  document.getElementById('totalYield').textContent = yield_;
 
   document.getElementById('retentionCoffee').textContent = coffee;
   document.getElementById('retentionLoss').textContent = loss;
   document.getElementById('retentionBrew').textContent = brew;
-  document.getElementById('retentionYield').textContent = state.yield;
+  document.getElementById('retentionYield').textContent = yield_;
   document.getElementById('bloomWater').textContent = coffee * 2;
+
+  // Grams yield note
+  if (state.inputMode === 'grams') {
+    document.getElementById('gramsYieldNote').textContent =
+      `With ${coffee}g coffee at 1:${state.ratio}, you'll brew ${brew}g water and get ~${yield_}g in the cup.`;
+  }
 
   // Grind
   const grind = GRIND[state.method][state.roast];
   document.getElementById('grindNumber').textContent = grind;
-  const coarseness = grind >= 53 ? 'COARSE' : grind >= 50 ? 'MEDIUM-COARSE' : 'MEDIUM';
+  const coarseness = grind >= 41 ? 'MEDIUM-COARSE' : grind >= 38 ? 'MEDIUM' : 'MEDIUM-FINE';
   document.getElementById('grindSub').textContent = `SETTING ${grind} OF 60 · ${coarseness}`;
   document.getElementById('grindLabel').textContent = GRIND_DESC[grind] || 'Start here and adjust based on taste.';
 
   // Temp
   const t = TEMP[state.roast];
-  document.getElementById('tempDegrees').textContent = `${t.c}°C / ${t.f}°F`;
   document.getElementById('tempAdvice').innerHTML = `<strong>${t.c}°C / ${t.f}°F</strong> — ${t.note}`;
 
   // Pour plan
   const steps = buildPourPlan();
   const plan = document.getElementById('pourPlan');
   plan.innerHTML = '';
-  let cumulative = 0;
   steps.forEach((s, i) => {
-    cumulative += s.water;
     const el = document.createElement('div');
     el.className = 'pour-step' + (s.isBloom ? ' bloom' : '');
     const mins = Math.floor(s.time / 60);
@@ -1185,20 +1254,55 @@ function renderCalc() {
 
   // Brew button sub
   const methodLabel = state.method === 'classic' ? '4-pour' : 'Four-Six';
-  document.getElementById('brewBtnSub').textContent = `V60 · ${methodLabel} · ${state.yield}g yield`;
+  const inputLabel = state.inputMode === 'cups'
+    ? `${state.cups} cup${state.cups > 1 ? 's' : ''} · ${state.cupSize}cc`
+    : `${coffee}g coffee`;
+  document.getElementById('brewBtnSub').textContent = `V60 · ${methodLabel} · ${inputLabel}`;
 }
 
 // ═══════════════════════════════════════════
 // CONTROLS
 // ═══════════════════════════════════════════
+
+// ── Input mode (cups vs grams) ──
+function setInputMode(mode) {
+  state.inputMode = mode;
+  document.getElementById('inputModeCups').classList.toggle('on', mode === 'cups');
+  document.getElementById('inputModeGrams').classList.toggle('on', mode === 'grams');
+  document.getElementById('cupsMode').style.display = mode === 'cups' ? 'block' : 'none';
+  document.getElementById('gramsMode').style.display = mode === 'grams' ? 'block' : 'none';
+  renderCalc();
+}
+
+// ── Cups ──
+function setCups(n) {
+  state.cups = n;
+  document.getElementById('cupsSlider').value = n;
+  document.getElementById('cupsVal').textContent = n;
+  popAnim('cupsVal');
+  renderCalc();
+}
+function setCupSize(cc) {
+  state.cupSize = cc;
+  ['Small','Std','Large'].forEach(n => document.getElementById('cupSize'+n)?.classList.remove('on'));
+  if (cc === 180) document.getElementById('cupSizeSmall').classList.add('on');
+  else if (cc === 250) document.getElementById('cupSizeStd').classList.add('on');
+  else if (cc === 350) document.getElementById('cupSizeLarge').classList.add('on');
+  renderCalc();
+}
+
+// ── Grams ──
+function setCoffeeGrams(g) {
+  state.coffeeGrams = g;
+  document.getElementById('coffeeGramsSlider').value = g;
+  document.getElementById('coffeeGramsInput').value = g;
+  document.getElementById('coffeeGramsVal').textContent = g + ' g';
+  popAnim('coffeeGramsVal');
+  renderCalc();
+}
+
 function setYield(v) {
-  state.yield = v;
-  document.getElementById('yieldSlider').value = v;
-  document.getElementById('yieldVal').textContent = v + ' g';
-  popAnim('yieldVal');
-  ['200','300','450'].forEach(n => document.getElementById('quickPill'+n)?.classList.remove('on'));
-  const pill = document.getElementById('quickPill'+v);
-  if (pill) pill.classList.add('on');
+  // legacy — only used if cups mode calls it directly; now just re-routes
   renderCalc();
 }
 function setRatio(v) {
@@ -1250,12 +1354,15 @@ function popAnim(id) {
 }
 
 // ─── Slider listeners ────────────────────
-document.getElementById('yieldSlider').addEventListener('input', e => {
-  state.yield = +e.target.value;
-  document.getElementById('yieldVal').textContent = state.yield + ' g';
-  popAnim('yieldVal');
-  ['200','300','450'].forEach(n => document.getElementById('quickPill'+n)?.classList.remove('on'));
-  renderCalc();
+document.getElementById('cupsSlider').addEventListener('input', e => {
+  setCups(+e.target.value);
+});
+document.getElementById('coffeeGramsSlider').addEventListener('input', e => {
+  setCoffeeGrams(+e.target.value);
+});
+document.getElementById('coffeeGramsInput').addEventListener('input', e => {
+  const v = Math.min(75, Math.max(15, +e.target.value || 15));
+  setCoffeeGrams(v);
 });
 document.getElementById('ratioSlider').addEventListener('input', e => {
   state.ratio = +e.target.value;
@@ -1467,6 +1574,10 @@ window.addEventListener('offline', () => { document.getElementById('offlineBadge
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
+// Default: 4 cups × 250cc = 1000g yield target
+state.cups = 4;
+state.cupSize = 250;
+state.inputMode = 'cups';
 renderCalc();
 </script>
 </body>
