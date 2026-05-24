@@ -989,18 +989,34 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
       <div class="app-sub">✦ brews and enjoys coffee ✦</div>
     </div>
     <button class="btn-icon" onclick="showJournal()" title="Brew Journal">📓</button>
-    <div class="version-badge">v1.3 · V60</div>
+    <div class="version-badge">v1.4 · V60 + Chemex</div>
   </header>
 
   <div class="screen-body" id="calcBody">
 
     <div class="calc-hero">
-      <div class="calc-hero-eyebrow">Hario V60 · Breville Smart Grinder Pro</div>
+      <div class="calc-hero-eyebrow" id="heroEyebrow">Hario V60 · Breville Smart Grinder Pro</div>
       <h1>Pour slow.<br>Think less. <span>Drink well.</span></h1>
       <div class="calc-hero-sub">Good coffee isn't complicated. It's just precise.</div>
     </div>
 
-    <!-- CARD 0: How are you measuring? -->
+    <!-- BREWER TILES -->
+    <div class="card">
+      <div class="section-label">☕ Brewer</div>
+      <div class="section-hint">SELECT YOUR BREWER</div>
+      <div class="mode-grid">
+        <button class="mode-btn on" id="brewerV60" onclick="setBrewer('v60')">
+          <span class="emoji">🫙</span>Hario V60
+          <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">pour over · cone</small>
+        </button>
+        <button class="mode-btn" id="brewerChemex" onclick="setBrewer('chemex')">
+          <span class="emoji">⚗️</span>Chemex 8-cup
+          <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">pour over · carafe</small>
+        </button>
+      </div>
+    </div>
+
+    <!-- INPUT CARD -->
     <div class="card">
       <div class="section-label">🧮 How are you measuring?</div>
       <div class="section-hint">CHOOSE YOUR INPUT METHOD</div>
@@ -1063,32 +1079,25 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
           With 20g coffee at 1:15, you'll brew 300g water and get ~260g in the cup.
         </div>
       </div>
-    </div>
 
-    <!-- CARD 1: Ratio + retention note -->
-    <div class="card" id="yieldCard">
-      <div class="section-label">☕ Brew summary</div>
-      <div class="section-hint">RATIO & WATER MATH</div>
-
-      <div class="slider-wrap">
-        <div class="slider-head">
-          <span class="slider-name">ratio (coffee : water)</span>
-          <span class="slider-val" id="ratioVal">1 : 15</span>
+      <!-- RATIO -->
+      <div style="margin-top:16px;">
+        <div class="slider-wrap">
+          <div class="slider-head">
+            <span class="slider-name">ratio (coffee : water)</span>
+            <span class="slider-val" id="ratioVal">1 : 15</span>
+          </div>
+          <input type="range" id="ratioSlider" min="13" max="18" step="0.5" value="15">
         </div>
-        <input type="range" id="ratioSlider" min="13" max="18" step="0.5" value="15">
-      </div>
-      <div class="pill-row">
-        <button class="pill" onclick="setRatio(13)">1:13 · strong</button>
-        <button class="pill on" id="ratioPill15" onclick="setRatio(15)">1:15 · balanced</button>
-        <button class="pill" onclick="setRatio(17)">1:17 · delicate</button>
-      </div>
-
-      <div class="info-box accent" style="margin-top:12px;" id="retentionNote">
-        <strong>Why brew water ≠ cup yield:</strong> V60 grounds absorb roughly 2× their weight in water. With <span id="retentionCoffee">20</span>g coffee, ~<span id="retentionLoss">40</span>g stays in the puck. So you brew <span id="retentionBrew">340</span>g to get <span id="retentionYield">300</span>g in the cup.
+        <div class="pill-row">
+          <button class="pill" onclick="setRatio(13)">1:13 · strong</button>
+          <button class="pill on" id="ratioPill15" onclick="setRatio(15)">1:15 · balanced</button>
+          <button class="pill" onclick="setRatio(17)">1:17 · delicate</button>
+        </div>
       </div>
     </div>
 
-    <!-- TOTALS ROW — output, after inputs -->
+    <!-- TOTALS ROW -->
     <div class="totals-line">
       <div class="total-block">
         <span class="total-big" id="totalCoffee">20</span>
@@ -1107,65 +1116,17 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
       </div>
     </div>
 
-    <!-- CARD 2: Brew Method -->
-    <div class="card">
-      <div class="section-label">🫗 Brew method</div>
-      <div class="section-hint">CHOOSE YOUR TECHNIQUE</div>
-
-      <div class="mode-grid" style="margin-bottom:12px;">
-        <button class="mode-btn on" id="methodClassic" onclick="setMethod('classic')">
-          <span class="emoji">4️⃣</span>Classic 4-Pour
-          <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">bloom + 3 pours</small>
-        </button>
-        <button class="mode-btn" id="methodFoursix" onclick="setMethod('foursix')">
-          <span class="emoji">⚖️</span>Four-Six
-          <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">Kasuya · dial flavor</small>
-        </button>
+    <!-- RETENTION NOTE -->
+    <div class="card" style="margin-top:0;">
+      <div class="info-box accent" id="retentionNote">
+        <strong>Why brew water ≠ cup yield:</strong> grounds absorb roughly 2× their weight in water. With <span id="retentionCoffee">20</span>g coffee, ~<span id="retentionLoss">40</span>g stays in the grounds. So you brew <span id="retentionBrew">340</span>g to get <span id="retentionYield">300</span>g in the cup.
       </div>
-
-      <!-- Four-Six flavor controls (hidden by default) -->
-      <div id="foursixControls" style="display:none;">
-        <div class="section-hint" style="margin-bottom:8px;">FIRST 40% — SWEETNESS & ACIDITY</div>
-        <div class="mode-row" style="margin-bottom:12px;">
-          <button class="mode-btn" id="fs46Sweeter" onclick="setFoursixBalance('sweeter')">
-            <span class="emoji">🍯</span>Sweeter
-          </button>
-          <button class="mode-btn on" id="fs46Balanced" onclick="setFoursixBalance('balanced')">
-            <span class="emoji">⚖️</span>Balanced
-          </button>
-          <button class="mode-btn" id="fs46Acidity" onclick="setFoursixBalance('acidity')">
-            <span class="emoji">🍋</span>Acidity
-          </button>
-        </div>
-        <div class="section-hint" style="margin-bottom:8px;">LAST 60% — STRENGTH</div>
-        <div class="mode-row">
-          <button class="mode-btn" id="fs46Light" onclick="setFoursixStrength('light')">
-            <span class="emoji">☁️</span>Lighter
-            <small style="display:block;font-size:0.68rem;opacity:0.6;">2 pours</small>
-          </button>
-          <button class="mode-btn on" id="fs46Medium" onclick="setFoursixStrength('medium')">
-            <span class="emoji">☕</span>Medium
-            <small style="display:block;font-size:0.68rem;opacity:0.6;">3 pours</small>
-          </button>
-          <button class="mode-btn" id="fs46Strong" onclick="setFoursixStrength('strong')">
-            <span class="emoji">💪</span>Stronger
-            <small style="display:block;font-size:0.68rem;opacity:0.6;">4 pours</small>
-          </button>
-        </div>
-        <div class="info-box teal" style="margin-top:10px;">
-          Tetsu Kasuya's 2016 World Brewers Cup method. First 40% of water sets flavor balance; last 60% sets strength. Coarser grind, slightly lower temp.
-        </div>
-      </div>
-
-      <!-- Pour plan display -->
-      <div class="section-hint" style="margin-top:14px;margin-bottom:8px;">POUR PLAN</div>
-      <div class="pour-plan" id="pourPlan"></div>
     </div>
 
-    <!-- CARD 3: Roast & Grind -->
+    <!-- ROAST + GRIND CARD -->
     <div class="card">
       <div class="section-label">🌱 Roast level</div>
-      <div class="section-hint">AFFECTS TEMP & GRIND RECOMMENDATION</div>
+      <div class="section-hint">AFFECTS GRIND SETTING & WATER TEMPERATURE</div>
 
       <div class="mode-row" style="margin-bottom:14px;">
         <button class="mode-btn" id="roastLight" onclick="setRoast('light')">
@@ -1190,15 +1151,71 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
 
       <div class="section-hint" style="margin-top:14px;margin-bottom:6px;">WATER TEMPERATURE</div>
       <div class="info-box teal" id="tempAdvice">
-        <strong id="tempDegrees">93°C / 200°F</strong> — Medium roast. Off the boil, rest your kettle 30–45 seconds. Off the base, your kettle loses ~1–2°C per minute — pour within 2 minutes.
+        <strong>93°C / 200°F</strong> — Medium roast. Off the boil, rest your kettle 30–45 seconds. Off the base, your kettle loses ~1–2°C per minute — pour within 2 minutes.
       </div>
     </div>
 
-    <!-- CARD 4: Bloom -->
+    <!-- BREW TECHNIQUE + BLOOM CARD -->
     <div class="card">
-      <div class="section-label">🌸 Bloom</div>
-      <div class="section-hint">PRE-INFUSION — DEGASSES THE COFFEE</div>
+      <div class="section-label" id="techniqueLabel">🫗 Brew technique</div>
+      <div class="section-hint">POUR METHOD & BLOOM</div>
 
+      <!-- V60 method toggle -->
+      <div id="v60Methods">
+        <div class="mode-grid" style="margin-bottom:12px;">
+          <button class="mode-btn on" id="methodClassic" onclick="setMethod('classic')">
+            <span class="emoji">4️⃣</span>Classic 4-Pour
+            <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">bloom + 3 pours</small>
+          </button>
+          <button class="mode-btn" id="methodFoursix" onclick="setMethod('foursix')">
+            <span class="emoji">⚖️</span>Four-Six
+            <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">Kasuya · dial flavor</small>
+          </button>
+        </div>
+
+        <div id="foursixControls" style="display:none;">
+          <div class="section-hint" style="margin-bottom:8px;">FIRST 40% — SWEETNESS & ACIDITY</div>
+          <div class="mode-row" style="margin-bottom:12px;">
+            <button class="mode-btn" id="fs46Sweeter" onclick="setFoursixBalance('sweeter')">
+              <span class="emoji">🍯</span>Sweeter
+            </button>
+            <button class="mode-btn on" id="fs46Balanced" onclick="setFoursixBalance('balanced')">
+              <span class="emoji">⚖️</span>Balanced
+            </button>
+            <button class="mode-btn" id="fs46Acidity" onclick="setFoursixBalance('acidity')">
+              <span class="emoji">🍋</span>Acidity
+            </button>
+          </div>
+          <div class="section-hint" style="margin-bottom:8px;">LAST 60% — STRENGTH</div>
+          <div class="mode-row" style="margin-bottom:12px;">
+            <button class="mode-btn" id="fs46Light" onclick="setFoursixStrength('light')">
+              <span class="emoji">☁️</span>Lighter
+              <small style="display:block;font-size:0.68rem;opacity:0.6;">2 pours</small>
+            </button>
+            <button class="mode-btn on" id="fs46Medium" onclick="setFoursixStrength('medium')">
+              <span class="emoji">☕</span>Medium
+              <small style="display:block;font-size:0.68rem;opacity:0.6;">3 pours</small>
+            </button>
+            <button class="mode-btn" id="fs46Strong" onclick="setFoursixStrength('strong')">
+              <span class="emoji">💪</span>Stronger
+              <small style="display:block;font-size:0.68rem;opacity:0.6;">4 pours</small>
+            </button>
+          </div>
+          <div class="info-box teal" style="margin-bottom:12px;">
+            Tetsu Kasuya's 2016 World Brewers Cup method. First 40% sets flavor balance; last 60% sets strength. Coarser grind, slightly lower temp.
+          </div>
+        </div>
+      </div>
+
+      <!-- Chemex note (shown when Chemex selected) -->
+      <div id="chemexNote" style="display:none;">
+        <div class="info-box teal" style="margin-bottom:12px;">
+          Chemex uses a thicker bonded filter — slower drawdown, coarser grind. Bloom + 2 pours. Total brew time ~5–6 minutes.
+        </div>
+      </div>
+
+      <!-- Bloom — shared by both brewers -->
+      <div class="section-hint" style="margin-bottom:6px;">BLOOM</div>
       <div class="slider-wrap">
         <div class="slider-head">
           <span class="slider-name">bloom duration</span>
@@ -1207,13 +1224,16 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
         <input type="range" id="bloomSlider" min="20" max="60" step="5" value="30">
       </div>
       <div class="pill-row">
-        <button class="pill" onclick="setBloom(30)">30s · standard</button>
-        <button class="pill" onclick="setBloom(45)">45s · fresh beans</button>
+        <button class="pill on" id="bloomPill30" onclick="setBloom(30)">30s · standard</button>
+        <button class="pill" id="bloomPill45" onclick="setBloom(45)">45s · fresh beans</button>
+      </div>
+      <div class="info-box coffee" style="margin-top:10px;">
+        Bloom water = 2× coffee weight (<span id="bloomWater">40</span>g). Saturate all grounds slowly. Fresh beans bloom dramatically — CO₂ releasing. Older beans bloom less; that's fine.
       </div>
 
-      <div class="info-box coffee" style="margin-top:10px;">
-        Bloom water = 2× coffee weight (<span id="bloomWater">40</span>g). Pour slowly in concentric circles, saturating all grounds. Fresh beans will bloom dramatically — that's CO₂ releasing. Older beans bloom less; that's fine.
-      </div>
+      <!-- Pour plan -->
+      <div class="section-hint" style="margin-top:14px;margin-bottom:8px;">POUR PLAN</div>
+      <div class="pour-plan" id="pourPlan"></div>
     </div>
 
   </div><!-- /screen-body -->
@@ -1306,13 +1326,14 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
 // STATE
 // ═══════════════════════════════════════════
 const state = {
-  inputMode: 'cups',    // 'cups' | 'grams'
+  brewer: 'v60',        // 'v60' | 'chemex'
+  inputMode: 'cups',
   cups: 4,
-  cupSize: 250,         // cc per cup
-  coffeeGrams: 20,      // used in grams mode — direct coffee weight
-  yield: 1000,          // g in cup (target) — derived, don't set directly
-  ratio: 15,            // 1:N
-  method: 'classic',
+  cupSize: 250,
+  coffeeGrams: 20,
+  yield: 1000,
+  ratio: 15,
+  method: 'classic',    // v60 only: 'classic' | 'foursix'
   roast: 'medium',
   bloomDuration: 30,
   foursixBalance: 'balanced',
@@ -1345,11 +1366,15 @@ function retentionLoss() {
 // ═══════════════════════════════════════════
 // GRIND + TEMP DATA
 // ═══════════════════════════════════════════
-// Grind settings: BCG820 filter zone is 31–50. V60 sits in the middle.
-// Omar's real range is 36–42 — that's the anchor. One source said 50 (French press territory) — wrong.
+// V60: Omar's real range 36–42. Chemex: coarser due to thick bonded filter.
 const GRIND = {
-  classic: { light: 40, medium: 38, dark: 36 },
-  foursix: { light: 42, medium: 40, dark: 38 }, // Kasuya: coarser grind intentionally
+  v60: {
+    classic: { light: 40, medium: 38, dark: 36 },
+    foursix: { light: 42, medium: 40, dark: 38 },
+  },
+  chemex: {
+    classic: { light: 48, medium: 46, dark: 44 },
+  },
 };
 const TEMP = {
   light:  { c: 96, f: 205, note: 'Light roast. Near-boiling water extracts the delicate aromatics that lower temps miss.' },
@@ -1357,13 +1382,13 @@ const TEMP = {
   dark:   { c: 91, f: 196, note: 'Dark roast. Let the kettle cool ~90 seconds. Lower temp reduces harsh bitter compounds from the roast.' },
 };
 const GRIND_DESC = {
-  36: 'Medium. Slightly finer for dark roast — the beans are more soluble, so less contact time needed.',
+  36: 'Medium. Slightly finer for dark roast — more soluble beans need less contact time.',
   38: 'Medium. Classic V60 starting point for medium roast. Finer if sour or weak, coarser if bitter.',
-  40: 'Medium-coarse. Light roast classic V60, or medium roast Four-Six. Coarser bed slows drawdown.',
+  40: 'Medium-coarse. Light roast V60, or medium roast Four-Six. Coarser bed slows drawdown.',
   42: 'Coarse. Four-Six, light roast. Kasuya deliberately uses coarser grind to control extraction speed.',
-  37: 'Medium.',
-  39: 'Medium.',
-  41: 'Medium-coarse.',
+  44: 'Medium-coarse. Chemex dark roast — thick bonded filter slows flow, grind coarser than V60.',
+  46: 'Coarse. Chemex medium roast. Thicker filter needs a coarser grind to prevent over-extraction.',
+  48: 'Coarse. Chemex light roast. Slow drawdown through thick filter, compensated with high temp.',
 };
 
 // ═══════════════════════════════════════════
@@ -1376,20 +1401,17 @@ function buildPourPlan() {
   const remaining = brew - bloom;
   const steps = [];
 
-  if (state.method === 'classic') {
-    // Bloom + 3 even pours
-    const pour1 = Math.round(remaining * 0.45);
-    const pour2 = Math.round(remaining * 0.30);
-    const pour3 = remaining - pour1 - pour2;
-    steps.push({ label: 'Bloom', water: bloom, time: 0, duration: state.bloomDuration, note: 'Saturate all grounds slowly', isBloom: true });
-    steps.push({ label: 'Pour 1', water: pour1, time: state.bloomDuration, duration: 40, note: 'Centre outward, slow spiral' });
-    steps.push({ label: 'Pour 2', water: pour2, time: state.bloomDuration + 40, duration: 35, note: 'Keep it centred' });
-    steps.push({ label: 'Pour 3', water: pour3, time: state.bloomDuration + 75, duration: 40, note: 'Final pour, let it drain' });
-  } else {
+  if (state.brewer === 'chemex') {
+    // Chemex: bloom + 2 pours, slower drawdown
+    const pour1 = Math.round(remaining * 0.60);
+    const pour2 = remaining - pour1;
+    steps.push({ label: 'Bloom', water: bloom, time: 0, duration: state.bloomDuration, note: 'Saturate all grounds, slow circles', isBloom: true });
+    steps.push({ label: 'Pour 1', water: pour1, time: state.bloomDuration, duration: 60, note: 'Slow spiral, centre outward' });
+    steps.push({ label: 'Pour 2', water: pour2, time: state.bloomDuration + 60, duration: 90, note: 'Final pour — let it drain fully, ~5 min total' });
+  } else if (state.method === 'foursix') {
     // Four-Six method
     const first40 = Math.round(brew * 0.40);
     const last60 = brew - first40;
-
     let p1, p2;
     if (state.foursixBalance === 'sweeter') {
       p1 = Math.round(first40 * 0.40); p2 = first40 - p1;
@@ -1398,7 +1420,6 @@ function buildPourPlan() {
     } else {
       p1 = Math.round(first40 * 0.50); p2 = first40 - p1;
     }
-
     let lastPours = [];
     if (state.foursixStrength === 'light') {
       const h = Math.round(last60 / 2);
@@ -1410,7 +1431,6 @@ function buildPourPlan() {
       const t = Math.round(last60 / 3);
       lastPours = [t, t, last60 - t*2];
     }
-
     let t = 0;
     steps.push({ label: 'Pour 1', water: p1, time: t, duration: 45, note: 'First 40%: flavor balance', isBloom: true });
     t += 45;
@@ -1420,6 +1440,15 @@ function buildPourPlan() {
       steps.push({ label: `Pour ${i+3}`, water: w, time: t, duration: 45, note: i === 0 ? 'Last 60%: strength' : 'Wait for bed to drain' });
       t += 45;
     });
+  } else {
+    // V60 classic 4-pour
+    const pour1 = Math.round(remaining * 0.45);
+    const pour2 = Math.round(remaining * 0.30);
+    const pour3 = remaining - pour1 - pour2;
+    steps.push({ label: 'Bloom', water: bloom, time: 0, duration: state.bloomDuration, note: 'Saturate all grounds slowly', isBloom: true });
+    steps.push({ label: 'Pour 1', water: pour1, time: state.bloomDuration, duration: 40, note: 'Centre outward, slow spiral' });
+    steps.push({ label: 'Pour 2', water: pour2, time: state.bloomDuration + 40, duration: 35, note: 'Keep it centred' });
+    steps.push({ label: 'Pour 3', water: pour3, time: state.bloomDuration + 75, duration: 40, note: 'Final pour, let it drain' });
   }
 
   return steps;
@@ -1450,16 +1479,27 @@ function renderCalc() {
       `With ${coffee}g coffee at 1:${state.ratio}, you'll brew ${brew}g water and get ~${yield_}g in the cup.`;
   }
 
-  // Grind
-  const grind = GRIND[state.method][state.roast];
+  // Hero eyebrow
+  const eyebrow = state.brewer === 'chemex'
+    ? 'Chemex 8-cup · Breville Smart Grinder Pro'
+    : 'Hario V60 · Breville Smart Grinder Pro';
+  document.getElementById('heroEyebrow').textContent = eyebrow;
+
+  // Grind — brewer + method aware
+  const methodKey = state.brewer === 'chemex' ? 'classic' : state.method;
+  const grind = GRIND[state.brewer][methodKey][state.roast];
   document.getElementById('grindNumber').textContent = grind;
-  const coarseness = grind >= 41 ? 'MEDIUM-COARSE' : grind >= 38 ? 'MEDIUM' : 'MEDIUM-FINE';
+  const coarseness = grind >= 46 ? 'COARSE' : grind >= 41 ? 'MEDIUM-COARSE' : grind >= 38 ? 'MEDIUM' : 'MEDIUM-FINE';
   document.getElementById('grindSub').textContent = `SETTING ${grind} OF 60 · ${coarseness}`;
   document.getElementById('grindLabel').textContent = GRIND_DESC[grind] || 'Start here and adjust based on taste.';
 
   // Temp
   const t = TEMP[state.roast];
   document.getElementById('tempAdvice').innerHTML = `<strong>${t.c}°C / ${t.f}°F</strong> — ${t.note}`;
+
+  // V60/Chemex method UI visibility
+  document.getElementById('v60Methods').style.display = state.brewer === 'v60' ? 'block' : 'none';
+  document.getElementById('chemexNote').style.display = state.brewer === 'chemex' ? 'block' : 'none';
 
   // Pour plan
   const steps = buildPourPlan();
@@ -1481,16 +1521,31 @@ function renderCalc() {
   });
 
   // Brew button sub
-  const methodLabel = state.method === 'classic' ? '4-pour' : 'Four-Six';
+  const brewerLabel = state.brewer === 'chemex' ? 'Chemex' : 'V60';
+  const methodLabel = state.brewer === 'chemex' ? 'bloom + 2 pours' : (state.method === 'classic' ? '4-pour' : 'Four-Six');
   const inputLabel = state.inputMode === 'cups'
     ? `${state.cups} cup${state.cups > 1 ? 's' : ''} · ${state.cupSize}cc`
     : `${coffee}g coffee`;
-  document.getElementById('brewBtnSub').textContent = `V60 · ${methodLabel} · ${inputLabel}`;
+  document.getElementById('brewBtnSub').textContent = `${brewerLabel} · ${methodLabel} · ${inputLabel}`;
 }
 
 // ═══════════════════════════════════════════
 // CONTROLS
 // ═══════════════════════════════════════════
+
+// ── Brewer ──
+function setBrewer(b) {
+  state.brewer = b;
+  document.getElementById('brewerV60').classList.toggle('on', b === 'v60');
+  document.getElementById('brewerChemex').classList.toggle('on', b === 'chemex');
+  // Chemex defaults to 45s bloom
+  if (b === 'chemex') {
+    setBloom(45);
+  } else {
+    setBloom(30);
+  }
+  renderCalc();
+}
 
 // ── Input mode (cups vs grams) ──
 function setInputMode(mode) {
@@ -1622,8 +1677,9 @@ function startBrew() {
   stepElapsed = 0;
   timerRunning = false;
 
-  const methodLabel = state.method === 'classic' ? '4-pour' : 'Four-Six';
-  document.getElementById('timerHeaderSub').textContent = `V60 · ${methodLabel}`;
+  const brewerLabel = state.brewer === 'chemex' ? 'Chemex' : 'V60';
+  const methodLabel = state.brewer === 'chemex' ? 'bloom + 2 pours' : (state.method === 'classic' ? '4-pour' : 'Four-Six');
+  document.getElementById('timerHeaderSub').textContent = `${brewerLabel} · ${methodLabel}`;
 
   renderTimerScreen();
   showScreen('timerScreen');
@@ -1853,15 +1909,19 @@ function brewSummaryText() {
   const coffee = coffeeWeight();
   const brew = brewWater();
   const yield_ = targetYield();
-  const grind = GRIND[state.method][state.roast];
-  const method = state.method === 'classic' ? '4-pour' : `Four-Six (${state.foursixBalance} / ${state.foursixStrength})`;
+  const methodKey = state.brewer === 'chemex' ? 'classic' : state.method;
+  const grind = GRIND[state.brewer][methodKey][state.roast];
+  const brewerLabel = state.brewer === 'chemex' ? 'Chemex 8-cup' : 'Hario V60';
+  const methodLabel = state.brewer === 'chemex' ? 'bloom + 2 pours'
+    : state.method === 'classic' ? '4-pour'
+    : `Four-Six (${state.foursixBalance} / ${state.foursixStrength})`;
   const inputDesc = state.inputMode === 'cups'
     ? `${state.cups} cup${state.cups > 1 ? 's' : ''} × ${state.cupSize}cc`
     : `${coffee}g coffee`;
   return [
-    `${inputDesc} · 1:${state.ratio}`,
+    `${brewerLabel} · ${inputDesc} · 1:${state.ratio}`,
     `Coffee: ${coffee}g · Brew water: ${brew}g · Cup yield: ~${yield_}g`,
-    `Method: ${method} · Roast: ${state.roast}`,
+    `Technique: ${methodLabel} · Roast: ${state.roast}`,
     `Grind: ${grind} · Temp: ${TEMP[state.roast].c}°C · Bloom: ${state.bloomDuration}s`,
   ].join('\n');
 }
@@ -1891,6 +1951,7 @@ function confirmSave() {
     notes,
     // Store full settings for reload
     settings: {
+      brewer: state.brewer,
       inputMode: state.inputMode,
       cups: state.cups,
       cupSize: state.cupSize,
@@ -1967,6 +2028,7 @@ function reloadBrew(id) {
   const s = entry.settings;
 
   // Restore all state
+  state.brewer = s.brewer || 'v60';
   state.inputMode = s.inputMode || 'cups';
   state.cups = s.cups || 4;
   state.cupSize = s.cupSize || 250;
@@ -1979,6 +2041,8 @@ function reloadBrew(id) {
   state.foursixStrength = s.foursixStrength || 'medium';
 
   // Sync UI controls
+  document.getElementById('brewerV60').classList.toggle('on', state.brewer === 'v60');
+  document.getElementById('brewerChemex').classList.toggle('on', state.brewer === 'chemex');
   setInputMode(state.inputMode);
   document.getElementById('cupsSlider').value = state.cups;
   document.getElementById('cupsVal').textContent = state.cups;
