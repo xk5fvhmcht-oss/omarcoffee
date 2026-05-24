@@ -762,7 +762,7 @@ input[type=range]::-webkit-slider-thumb:active { cursor: grabbing; transform: sc
       <div class="app-title">Omar <span>Coffee</span></div>
       <div class="app-sub">✦ brews and enjoys coffee ✦</div>
     </div>
-    <div class="version-badge">v1.1 · V60</div>
+    <div class="version-badge">v1.2 · V60</div>
   </header>
 
   <div class="screen-body" id="calcBody">
@@ -1407,6 +1407,7 @@ function goBack() {
     clearInterval(timerInterval);
     timerInterval = null;
   }
+  releaseWakeLock();
   showScreen('calcScreen');
 }
 
@@ -1421,8 +1422,12 @@ function toggleTimer() {
     timerRunning = false;
     clearInterval(timerInterval);
     timerInterval = null;
+    releaseWakeLock();
     document.getElementById('timerStartBtn').textContent = 'Resume';
   } else {
+    // Start / Resume — must happen inside this user gesture for iOS audio unlock
+    unlockAudio();
+    requestWakeLock();
     timerRunning = true;
     document.getElementById('timerStartBtn').textContent = 'Pause';
     timerInterval = setInterval(tick, 1000);
@@ -1433,6 +1438,7 @@ function resetBrew() {
   timerRunning = false;
   clearInterval(timerInterval);
   timerInterval = null;
+  releaseWakeLock();
   elapsed = 0;
   currentStepIdx = 0;
   stepElapsed = 0;
@@ -1461,7 +1467,7 @@ function tick() {
     timerInterval = null;
     playDone();
     document.getElementById('doneBanner').style.display = 'block';
-    document.getElementById('doneSub').textContent = `${state.yield}g brewed. Let it cool a moment — flavors develop as it drops to ~70°C.`;
+    document.getElementById('doneSub').textContent = `${targetYield()}g brewed. Let it cool a moment — flavors develop as it drops to ~70°C.`;
     document.getElementById('timerControls').style.display = 'none';
   }
 
@@ -1523,36 +1529,56 @@ function renderTimerScreen() {
 
 // ═══════════════════════════════════════════
 // WEB AUDIO — CHIMES
+// iOS requires AudioContext to be created AND resumed inside a user gesture.
+// We create it on first Start tap and resume it there too.
 // ═══════════════════════════════════════════
 let audioCtx = null;
-function getAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  return audioCtx;
-}
-function playTone(freq, duration, type = 'sine', volume = 0.4) {
-  if (!state.soundOn) return;
+
+function unlockAudio() {
+  // Call this directly inside a user gesture (Start button tap)
   try {
-    const ctx = getAudio();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    gain.gain.setValueAtTime(volume, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + duration);
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    // Play a silent buffer to fully unlock on iOS
+    const buf = audioCtx.createBuffer(1, 1, 22050);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    src.start(0);
   } catch(e) {}
 }
+
+function playTone(freq, duration, type = 'sine', volume = 0.45) {
+  if (!state.soundOn) return;
+  try {
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + duration);
+  } catch(e) {}
+}
+
 function playChime() {
-  // Three-note ascending chime
-  setTimeout(() => playTone(523, 0.4), 0);
+  // Three-note ascending chime — pour now
+  playTone(523, 0.4);
   setTimeout(() => playTone(659, 0.4), 150);
   setTimeout(() => playTone(784, 0.6), 300);
 }
 function playDone() {
-  // Satisfying descending resolution
-  setTimeout(() => playTone(784, 0.5), 0);
+  // Descending resolution — brew complete
+  playTone(784, 0.5);
   setTimeout(() => playTone(659, 0.5), 200);
   setTimeout(() => playTone(523, 0.5), 400);
   setTimeout(() => playTone(392, 0.8), 600);
@@ -1561,6 +1587,25 @@ function toggleSound() {
   state.soundOn = !state.soundOn;
   document.getElementById('timerSoundBtn').textContent = state.soundOn ? '🔔' : '🔕';
 }
+
+// ═══════════════════════════════════════════
+// WAKE LOCK — keep screen on while brewing
+// ═══════════════════════════════════════════
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e) {}
+}
+function releaseWakeLock() {
+  try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch(e) {}
+}
+// Re-acquire if page becomes visible again (iOS releases on tab switch)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && timerRunning) requestWakeLock();
+});
 
 // ═══════════════════════════════════════════
 // SERVICE WORKER
