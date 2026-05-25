@@ -1057,8 +1057,11 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
       <div class="app-title">Omar <span>Coffee</span></div>
       <div class="app-sub">✦ brews and enjoys coffee ✦</div>
     </div>
+    <button class="btn-icon" id="brewingPill" onclick="showScreen('timerScreen')" title="Return to brew" style="display:none;background:var(--accent);border-color:var(--accent);color:#fff;width:auto;padding:0 12px;border-radius:var(--pill-radius);font-family:var(--num-font);font-size:0.75rem;letter-spacing:0.03em;gap:5px;">
+      ☕ <span id="brewingPillTime">0:00</span>
+    </button>
     <button class="btn-icon" onclick="showJournal()" title="Brew Journal">📓</button>
-    <div class="version-badge">v1.6 · V60 · Chemex · French Press</div>
+    <div class="version-badge">v1.7 · V60 · Chemex · French Press</div>
   </header>
 
   <div class="screen-body" id="calcBody">
@@ -1334,8 +1337,8 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
   </div><!-- /screen-body -->
 
   <div class="bottom-cta">
-    <button class="btn-brew" onclick="startBrew()">
-      <span>Start Brewing</span>
+    <button class="btn-brew" id="brewBtn" onclick="handleBrewBtn()">
+      <span id="brewBtnLabel">Start Brewing</span>
       <span class="btn-brew-sub" id="brewBtnSub">V60 · 4-pour · 300g yield</span>
     </button>
   </div>
@@ -1355,6 +1358,10 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
   </header>
 
   <div class="timer-body" id="timerBody">
+
+    <div id="silentWarning" style="display:none;background:rgba(193,123,58,0.15);border:1px solid rgba(193,123,58,0.3);border-radius:var(--btn-radius);padding:9px 14px;margin-bottom:4px;font-family:var(--label-font);font-size:0.88rem;color:var(--accent-lt);text-align:center;animation:fadeIn 0.4s ease both;">
+      🔔 Ringer on? Silent mode will block the chimes.
+    </div>
 
     <div class="clock-wrap">
       <div class="clock-elapsed" id="clockElapsed">0:00</div>
@@ -1831,6 +1838,34 @@ let timerRunning = false;
 let elapsed = 0;
 let currentStepIdx = 0;
 let stepElapsed = 0;
+let ringerWarnShown = false; // reset each brew session
+
+function handleBrewBtn() {
+  if (timerRunning || elapsed > 0) {
+    // Brew in progress — just go back to timer
+    showScreen('timerScreen');
+  } else {
+    startBrew();
+  }
+}
+
+function updateBrewBtn() {
+  const inProgress = timerRunning || elapsed > 0;
+  document.getElementById('brewBtnLabel').textContent = inProgress ? 'Continue Brew' : 'Start Brewing';
+  document.getElementById('brewBtn').style.background = inProgress ? '#2d7d72' : '';
+}
+
+function updateBrewingPill() {
+  const pill = document.getElementById('brewingPill');
+  if (timerRunning || elapsed > 0) {
+    pill.style.display = 'flex';
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    document.getElementById('brewingPillTime').textContent = `${m}:${String(s).padStart(2,'0')}`;
+  } else {
+    pill.style.display = 'none';
+  }
+}
 
 function startBrew() {
   brewSteps = buildPourPlan();
@@ -1838,6 +1873,7 @@ function startBrew() {
   currentStepIdx = 0;
   stepElapsed = 0;
   timerRunning = false;
+  ringerWarnShown = false;
 
   const brewerLabel = state.brewer === 'chemex' ? 'Chemex' : state.brewer === 'frenchpress' ? 'French Press' : 'V60';
   const methodLabel = state.brewer === 'frenchpress' ? `${state.steepMinutes} min steep`
@@ -1847,18 +1883,31 @@ function startBrew() {
 
   renderTimerScreen();
   showScreen('timerScreen');
+  showSilentWarning();
 }
 
 function goBack() {
-  if (timerRunning) {
-    timerRunning = false;
-    clearInterval(timerInterval);
-    clearInterval(audioKeepAlive);
-    timerInterval = null;
-    audioKeepAlive = null;
+  // Never stop the timer — just switch screens
+  if (!timerRunning) {
+    // Timer not running — safe to release wake lock
+    releaseWakeLock();
   }
-  releaseWakeLock();
+  // Wake lock stays if timer is running
+  updateBrewBtn();
+  updateBrewingPill();
   showScreen('calcScreen');
+}
+
+function showSilentWarning() {
+  if (ringerWarnShown) return;
+  ringerWarnShown = true;
+  const w = document.getElementById('silentWarning');
+  w.style.display = 'block';
+  setTimeout(() => {
+    w.style.transition = 'opacity 0.8s ease';
+    w.style.opacity = '0';
+    setTimeout(() => { w.style.display = 'none'; w.style.opacity = '1'; w.style.transition = ''; }, 800);
+  }, 4000);
 }
 
 function showScreen(id) {
@@ -1899,10 +1948,14 @@ function resetBrew() {
   elapsed = 0;
   currentStepIdx = 0;
   stepElapsed = 0;
+  ringerWarnShown = false;
   document.getElementById('timerStartBtn').textContent = 'Start';
   document.getElementById('doneBanner').style.display = 'none';
   document.getElementById('timerControls').style.display = 'flex';
+  document.getElementById('silentWarning').style.display = 'none';
   renderTimerScreen();
+  updateBrewingPill();
+  updateBrewBtn();
 }
 
 function tick() {
@@ -1922,8 +1975,11 @@ function tick() {
   if (elapsed >= totalTime) {
     timerRunning = false;
     clearInterval(timerInterval);
+    clearInterval(audioKeepAlive);
     timerInterval = null;
-    stepElapsed = brewSteps[brewSteps.length - 1].duration; // pin ring at empty
+    audioKeepAlive = null;
+    stepElapsed = brewSteps[brewSteps.length - 1].duration;
+    releaseWakeLock();
     playDone();
     document.getElementById('doneBanner').style.display = 'block';
     document.getElementById('doneSub').textContent = state.brewer === 'frenchpress'
@@ -1933,6 +1989,8 @@ function tick() {
   }
 
   renderTimerScreen();
+  updateBrewingPill();
+  updateBrewBtn();
 }
 
 function renderTimerScreen() {
