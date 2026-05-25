@@ -1370,10 +1370,9 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
 
     <!-- current step card -->
     <div class="current-step-card" id="currentStepCard">
-      <div class="current-step-label">current step</div>
-      <div class="current-step-name" id="currentStepName">Ready</div>
-      <div class="current-step-water" id="currentStepWater"></div>
-      <div class="current-step-note" id="currentStepNote">Press Start when ready</div>
+      <div class="current-step-label" id="currentStepName">Ready</div>
+      <div class="current-step-water" id="currentStepWater" style="font-size:2rem;font-weight:700;font-style:normal;font-family:var(--num-font);color:#fff;margin:6px 0;letter-spacing:-0.03em;position:relative;"></div>
+      <div class="current-step-note" id="currentStepNote" style="position:relative;">Press Start when ready</div>
     </div>
 
     <!-- countdown ring -->
@@ -1646,7 +1645,9 @@ function renderCalc() {
     const mins = Math.floor(s.time / 60);
     const secs = s.time % 60;
     const tStr = mins > 0 ? `${mins}:${String(secs).padStart(2,'0')}` : `0:${String(secs).padStart(2,'0')}`;
-    const waterDisplay = s.water > 0 ? `→ ${cumPlan}g` : s.label === 'Press' ? 'press' : `${state.steepMinutes} min`;
+    const waterDisplay = s.water > 0
+      ? `${s.water}g → ${cumPlan}g`
+      : s.label === 'Press' ? 'press' : `${state.steepMinutes} min`;
     el.innerHTML = `
       <div class="pour-step-num">${i+1}</div>
       <div class="pour-step-label">${s.label}${s.note ? ` — <em style="opacity:0.6;font-size:0.8em;">${s.note}</em>` : ''}</div>
@@ -1859,9 +1860,17 @@ function updateBrewingPill() {
   const pill = document.getElementById('brewingPill');
   if (timerRunning || elapsed > 0) {
     pill.style.display = 'flex';
-    const m = Math.floor(elapsed / 60);
-    const s = elapsed % 60;
-    document.getElementById('brewingPillTime').textContent = `${m}:${String(s).padStart(2,'0')}`;
+    // Show countdown to next step — matches the ring
+    if (brewSteps.length > 0 && currentStepIdx < brewSteps.length) {
+      const step = brewSteps[currentStepIdx];
+      const remaining = Math.max(0, step.duration - stepElapsed);
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
+      const label = remaining > 60
+        ? `☕ ${m}:${String(s).padStart(2,'0')}`
+        : `☕ ${remaining}s`;
+      document.getElementById('brewingPillTime').textContent = label.replace('☕ ', '');
+    }
   } else {
     pill.style.display = 'none';
   }
@@ -2008,14 +2017,18 @@ function renderTimerScreen() {
     let cumAtStep = 0;
     for (let i = 0; i <= currentStepIdx; i++) cumAtStep += brewSteps[i].water;
 
+    // Step name is the small label, water target is the hero
     document.getElementById('currentStepName').textContent = step.label;
-    // Show cumulative target or steep/press label
     if (step.water > 0) {
-      document.getElementById('currentStepWater').textContent = `Pour until scale reads ${cumAtStep}g`;
+      document.getElementById('currentStepWater').textContent = `${cumAtStep}g`;
+      document.getElementById('currentStepNote').textContent = 'pour until scale reads this';
+    } else if (step.label === 'Press') {
+      document.getElementById('currentStepWater').textContent = 'Press';
+      document.getElementById('currentStepNote').textContent = 'slowly — 20–25 seconds down';
     } else {
-      document.getElementById('currentStepWater').textContent = step.label === 'Press' ? 'Press slowly — 20–25 seconds' : `Steep ${state.steepMinutes} min`;
+      document.getElementById('currentStepWater').textContent = `${state.steepMinutes} min`;
+      document.getElementById('currentStepNote').textContent = 'lid on, plunger up — don\'t touch';
     }
-    document.getElementById('currentStepNote').textContent = step.note || '';
 
     // Countdown ring — guard against zero duration
     const remaining = Math.max(0, step.duration - stepElapsed);
@@ -2043,7 +2056,9 @@ function renderTimerScreen() {
     const mins = Math.floor(step.time / 60);
     const secs = step.time % 60;
     const tStr = `${mins}:${String(secs).padStart(2,'0')}`;
-    const waterLabel = step.water > 0 ? `→ ${cumWater}g on scale` : step.label === 'Press' ? 'press' : `${state.steepMinutes} min`;
+    const waterLabel = step.water > 0
+      ? `${step.water}g this step → ${cumWater}g on scale`
+      : step.label === 'Press' ? 'press slowly' : `${state.steepMinutes} min steep`;
     el.innerHTML = `
       <div class="step-dot">${i < currentStepIdx ? '✓' : i+1}</div>
       <div class="step-info">
