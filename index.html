@@ -1375,7 +1375,7 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
         <svg class="countdown-ring-svg" width="140" height="140" viewBox="0 0 140 140">
           <circle class="countdown-ring-bg" cx="70" cy="70" r="60"/>
           <circle class="countdown-ring-fg" id="ringFg" cx="70" cy="70" r="60"
-            stroke-dasharray="377" stroke-dashoffset="0"/>
+            stroke-dasharray="377" stroke-dashoffset="0" style="stroke-dashoffset:0;transition:stroke-dashoffset 0.5s linear;"/>
         </svg>
         <div class="countdown-center">
           <div class="countdown-num" id="countdownNum">—</div>
@@ -1631,16 +1631,19 @@ function renderCalc() {
   const steps = buildPourPlan();
   const plan = document.getElementById('pourPlan');
   plan.innerHTML = '';
+  let cumPlan = 0;
   steps.forEach((s, i) => {
+    cumPlan += s.water;
     const el = document.createElement('div');
     el.className = 'pour-step' + (s.isBloom ? ' bloom' : '');
     const mins = Math.floor(s.time / 60);
     const secs = s.time % 60;
     const tStr = mins > 0 ? `${mins}:${String(secs).padStart(2,'0')}` : `0:${String(secs).padStart(2,'0')}`;
+    const waterDisplay = s.water > 0 ? `→ ${cumPlan}g` : s.label === 'Press' ? 'press' : `${state.steepMinutes} min`;
     el.innerHTML = `
       <div class="pour-step-num">${i+1}</div>
       <div class="pour-step-label">${s.label}${s.note ? ` — <em style="opacity:0.6;font-size:0.8em;">${s.note}</em>` : ''}</div>
-      <div class="pour-step-water">${s.water}g</div>
+      <div class="pour-step-water">${waterDisplay}</div>
       <div class="pour-step-time">@ ${tStr}</div>
     `;
     plan.appendChild(el);
@@ -1823,6 +1826,7 @@ document.getElementById('bloomSlider').addEventListener('input', e => {
 // ═══════════════════════════════════════════
 let brewSteps = [];
 let timerInterval = null;
+let audioKeepAlive = null;
 let timerRunning = false;
 let elapsed = 0;
 let currentStepIdx = 0;
@@ -1849,7 +1853,9 @@ function goBack() {
   if (timerRunning) {
     timerRunning = false;
     clearInterval(timerInterval);
+    clearInterval(audioKeepAlive);
     timerInterval = null;
+    audioKeepAlive = null;
   }
   releaseWakeLock();
   showScreen('calcScreen');
@@ -1862,10 +1868,11 @@ function showScreen(id) {
 
 function toggleTimer() {
   if (timerRunning) {
-    // Pause
     timerRunning = false;
     clearInterval(timerInterval);
+    clearInterval(audioKeepAlive);
     timerInterval = null;
+    audioKeepAlive = null;
     releaseWakeLock();
     document.getElementById('timerStartBtn').textContent = 'Resume';
   } else {
@@ -1875,13 +1882,19 @@ function toggleTimer() {
     timerRunning = true;
     document.getElementById('timerStartBtn').textContent = 'Pause';
     timerInterval = setInterval(tick, 1000);
+    // Keep AudioContext alive — iOS suspends it after ~30s of silence
+    audioKeepAlive = setInterval(() => {
+      if (audioCtx && audioCtx.state !== 'running') audioCtx.resume();
+    }, 20000);
   }
 }
 
 function resetBrew() {
   timerRunning = false;
   clearInterval(timerInterval);
+  clearInterval(audioKeepAlive);
   timerInterval = null;
+  audioKeepAlive = null;
   releaseWakeLock();
   elapsed = 0;
   currentStepIdx = 0;
@@ -1896,6 +1909,7 @@ function tick() {
   elapsed++;
   stepElapsed++;
 
+  // Advance step if current step duration complete
   const step = brewSteps[currentStepIdx];
   if (stepElapsed >= step.duration && currentStepIdx < brewSteps.length - 1) {
     currentStepIdx++;
@@ -1903,12 +1917,13 @@ function tick() {
     playChime();
   }
 
-  // Check done
+  // Check fully done — use elapsed vs total
   const totalTime = brewSteps.reduce((a, s) => a + s.duration, 0);
   if (elapsed >= totalTime) {
     timerRunning = false;
     clearInterval(timerInterval);
     timerInterval = null;
+    stepElapsed = brewSteps[brewSteps.length - 1].duration; // pin ring at empty
     playDone();
     document.getElementById('doneBanner').style.display = 'block';
     document.getElementById('doneSub').textContent = state.brewer === 'frenchpress'
@@ -1930,17 +1945,33 @@ function renderTimerScreen() {
   // Current step
   if (currentStepIdx < brewSteps.length) {
     const step = brewSteps[currentStepIdx];
+
+    // Build cumulative water up to and including this step
+    let cumAtStep = 0;
+    for (let i = 0; i <= currentStepIdx; i++) cumAtStep += brewSteps[i].water;
+
     document.getElementById('currentStepName').textContent = step.label;
-    document.getElementById('currentStepWater').textContent = `Pour ${step.water}g water`;
+    // Show cumulative target or steep/press label
+    if (step.water > 0) {
+      document.getElementById('currentStepWater').textContent = `Pour until scale reads ${cumAtStep}g`;
+    } else {
+      document.getElementById('currentStepWater').textContent = step.label === 'Press' ? 'Press slowly — 20–25 seconds' : `Steep ${state.steepMinutes} min`;
+    }
     document.getElementById('currentStepNote').textContent = step.note || '';
 
-    // Countdown ring
-    const remaining = step.duration - stepElapsed;
-    document.getElementById('countdownNum').textContent = remaining;
-    document.getElementById('countdownLabel').textContent = 'seconds';
-    const circumference = 377; // 2π×60
-    const offset = circumference * (1 - remaining / step.duration);
-    document.getElementById('ringFg').style.strokeDashoffset = offset;
+    // Countdown ring — guard against zero duration
+    const remaining = Math.max(0, step.duration - stepElapsed);
+    document.getElementById('countdownNum').textContent = remaining > 60
+      ? `${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}`
+      : remaining;
+    document.getElementById('countdownLabel').textContent = remaining > 60 ? 'remaining' : 'seconds';
+    const circumference = 377;
+    const offset = step.duration > 0
+      ? circumference * (1 - remaining / step.duration)
+      : 0;
+    const ring = document.getElementById('ringFg');
+    ring.style.strokeDashoffset = offset;
+    ring.setAttribute('stroke-dashoffset', offset);
   }
 
   // Step list
@@ -1954,11 +1985,12 @@ function renderTimerScreen() {
     const mins = Math.floor(step.time / 60);
     const secs = step.time % 60;
     const tStr = `${mins}:${String(secs).padStart(2,'0')}`;
+    const waterLabel = step.water > 0 ? `→ ${cumWater}g on scale` : step.label === 'Press' ? 'press' : `${state.steepMinutes} min`;
     el.innerHTML = `
       <div class="step-dot">${i < currentStepIdx ? '✓' : i+1}</div>
       <div class="step-info">
         <div class="step-name">${step.label}</div>
-        <div class="step-sub">${step.water}g · cumulative ${cumWater}g</div>
+        <div class="step-sub">${waterLabel}</div>
       </div>
       <div class="step-time">@ ${tStr}</div>
     `;
@@ -2002,7 +2034,8 @@ function playTone(freq, duration, type = 'sine', volume = 0.45) {
   if (!state.soundOn) return;
   try {
     if (!audioCtx) return;
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    // Always resume — iOS suspends AudioContext after inactivity even mid-brew
+    if (audioCtx.state !== 'running') audioCtx.resume();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
