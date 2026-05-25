@@ -2,7 +2,7 @@
 
 > *Pour slow. Think less. Drink well.*
 
-A pour over coffee calculator and brew timer. Built by someone who brews and enjoys coffee.
+A coffee calculator and brew timer. Built by someone who brews and enjoys coffee.
 
 🫖 [Open the app](https://xk5fvhmcht-oss.github.io/omarcoffee/)
 
@@ -12,9 +12,33 @@ A pour over coffee calculator and brew timer. Built by someone who brews and enj
 
 Two things, cleanly:
 
-1. **Calculator** — you tell it how you're brewing, it tells you exactly how much coffee to grind, how much water to boil, and what grind setting to use on your Breville Smart Grinder Pro.
+1. **Calculator** — set your brewer, how much you want to drink, roast level. The app tells you exactly how much coffee to grind, how much water to boil, what grind setting to use, and what temperature to target.
 
-2. **Brew timer** — step-by-step guide through the brew with a live countdown ring, chimes at every pour, and a running water total so you always know where you are.
+2. **Brew timer** — step-by-step guide through the brew with a live countdown ring, chimes at every pour or step transition, and a running water total. Screen stays on while brewing (Wake Lock).
+
+---
+
+## Brewers
+
+### Hario V60
+Pour over, cone dripper. Paper filter. Two techniques:
+
+**Classic 4-Pour** — bloom + 3 pours. Total brew time ~3–4 minutes.
+1. Bloom — 2× coffee weight, 30–45 seconds
+2. Pour 1 — 45% of remaining water, slow spiral
+3. Pour 2 — 30% of remaining water
+4. Pour 3 — final 25%, let it drain
+
+**Four-Six Method** (Tetsu Kasuya, 2016 World Brewers Cup) — 5 pours at 45-second intervals.
+- First 40% of water: controls sweetness and acidity (adjustable split)
+- Last 60% of water: controls strength (2, 3, or 4 pours)
+- Uses coarser grind than classic V60
+
+### Chemex 8-cup
+Pour over, carafe. Thick bonded paper filter — slower drawdown, coarser grind. Bloom + 2 pours. Total brew time ~5–6 minutes.
+
+### French Press
+Immersion brew. Metal mesh — no paper filter. All water added at once, steep, press. Pour immediately after pressing. Steep time adjustable: 3, 4, or 5 minutes.
 
 ---
 
@@ -22,78 +46,47 @@ Two things, cleanly:
 
 ### Brew water ≠ cup yield
 
-This is the most important thing the app gets right. V60 grounds absorb roughly **2× their weight in water** — that water stays in the puck and never reaches your cup. So if you want 300g in your cup with 20g of coffee, you need to brew with 340g of water, not 300g.
+**Pour over (V60, Chemex):** Paper filter grounds absorb roughly **2× their weight** in water. With 20g coffee, ~40g stays in the puck. To get 300g in your cup, you brew with 340g of water.
 
-The formula:
+**French press:** Metal mesh retains much less — roughly **1× coffee weight**. With 20g coffee, ~20g stays in the grounds.
 
 ```
-coffee = yield ÷ (ratio − 2)
+Pour over:   coffee = yield ÷ (ratio − 2)
+French press: coffee = yield ÷ (ratio − 1)
 brew water = coffee × ratio
-retention = coffee × 2
-cup yield = brew water − retention
 ```
 
-The app lets you work from either direction:
-- **By cups** — set how many cups and what size, it derives everything else
-- **By grams** — set your coffee weight directly, it shows you brew water and expected yield
+### Input modes
 
----
-
-## Input modes
-
-### By cups (default)
-- Cups: 1–7, default 4 (people like refills)
+**By cups** (default) — set how many cups and what size, app derives everything.
+- Cups: 1–7
 - Cup sizes: Small (180cc) · Standard (250cc) · Large mug (350cc)
+- V60/Chemex default: 4 cups · French press default: 7 cups
 
-### By grams of coffee
-- Slider: 15g–75g
-- Numeric input field for exact entry
-- Live yield calculation shown inline
+**By grams of coffee** — set your exact coffee weight, app shows brew water and expected yield. Slider 15–75g plus numeric input field.
 
 ---
 
-## Brew methods
+## Grind settings — Breville Smart Grinder Pro (BCG820)
 
-### Classic 4-Pour
-Bloom + 3 pours. The standard V60 approach.
+Filter zone on the BCG820 is settings 31–50. French press sits above that.
 
-1. **Bloom** — 2× coffee weight, 30–45 seconds. Degasses the coffee, sets up even extraction.
-2. **Pour 1** — 45% of remaining water. Centre outward spiral.
-3. **Pour 2** — 30% of remaining water. Keep it centred.
-4. **Pour 3** — final 25%. Let it drain fully.
-
-Total brew time: ~3–4 minutes depending on grind and bloom duration.
-
-### Four-Six Method
-Tetsu Kasuya's 2016 World Brewers Cup winning technique. Five pours at 45-second intervals.
-
-- **First 40% of water** — split across 2 pours, controls sweetness and acidity
-  - Equal split → balanced
-  - Smaller first pour → sweeter
-  - Larger first pour → more acidity
-- **Last 60% of water** — split across 2, 3, or 4 pours, controls strength
-  - 2 pours → lighter
-  - 3 pours → medium (Kasuya's default)
-  - 4 pours → stronger
-
-Uses a coarser grind and slightly lower water temperature than classic V60.
-
----
-
-## Grinder settings — Breville Smart Grinder Pro (BCG820)
-
-The BCG820 has 60 settings. Espresso lives at 1–20. Filter/pour over sits in the 31–50 range. V60 lands in the middle of that.
-
-| Method | Roast | Setting | Description |
+| Brewer | Roast | Setting | Coarseness |
 |---|---|---|---|
-| Classic V60 | Light | 40 | Medium-coarse |
-| Classic V60 | Medium | 38 | Medium — classic starting point |
-| Classic V60 | Dark | 36 | Medium — slightly finer |
-| Four-Six | Light | 42 | Coarse — Kasuya's deliberate choice |
-| Four-Six | Medium | 40 | Medium-coarse |
-| Four-Six | Dark | 38 | Medium |
+| V60 Classic | Light | 40 | Medium-coarse |
+| V60 Classic | Medium | 38 | Medium |
+| V60 Classic | Dark | 36 | Medium |
+| V60 Four-Six | Light | 42 | Coarse |
+| V60 Four-Six | Medium | 40 | Medium-coarse |
+| V60 Four-Six | Dark | 38 | Medium |
+| Chemex | Light | 48 | Coarse |
+| Chemex | Medium | 46 | Coarse |
+| Chemex | Dark | 44 | Medium-coarse |
+| French Press | Light | 54 | Extra coarse |
+| French Press | Medium | 52 | Coarse |
+| French Press | Dark | 50 | Coarse |
 
-These are starting points. Adjust finer if the cup is sour or weak. Adjust coarser if it's bitter. One setting at a time.
+These are starting points. Finer if sour or weak. Coarser if bitter. One setting at a time.
 
 ---
 
@@ -105,28 +98,35 @@ These are starting points. Adjust finer if the cup is sour or weak. Adjust coars
 | Medium | 93°C / 200°F | Off boil, rest 30–45 seconds. |
 | Dark | 91°C / 196°F | Let the kettle cool ~90 seconds. |
 
-Temperature is advisory. The app notes that once your kettle is off its base, it loses roughly 1–2°C per minute — pour within 2 minutes of hitting your target temp.
-
----
-
-## Bloom
-
-Bloom water = 2× coffee weight. Pour slowly in concentric circles, saturating all grounds. Fresh beans will bloom dramatically — that's CO₂ releasing. Older beans bloom less; that's fine.
-
-Bloom duration: 20–60 seconds, adjustable. 30s standard, 45s for very fresh beans.
+Off the base, your kettle loses ~1–2°C per minute. Pour within 2 minutes of hitting your target.
 
 ---
 
 ## Brew timer
 
 - Live elapsed clock
-- Current step highlighted with pour amount and technique note
-- Countdown ring drains in real time between pours
-- Audio chimes at each pour transition (Web Audio API, no library, works offline)
-- Mute button
+- Current step card — name, water amount, technique note
+- Countdown ring — drains in real time between steps
+- Audio chimes at each step transition (Web Audio API, works offline)
+- Mutable sound (🔔/🔕 toggle)
 - Running water totals — poured vs remaining
-- Full step list with done / active / upcoming states
-- "Drink well." on completion
+- Wake Lock — screen stays on while brewing
+- Step list with done / active / upcoming states
+- French press done state: "Pour immediately — don't let it sit"
+- Pour over done state: "Drink well"
+
+---
+
+## Brew journal
+
+- Save after every brew — tap "Save to journal" on the done screen
+- **Next time adjuster** — tap grind finer / coarser and/or more / less coffee
+- Free-text notes field
+- Up to 20 brews saved, newest first
+- Journal cards show next-time reminder badge if set
+- **Brew again** — reloads all settings instantly, flashes a reminder toast if next-time adjustments were saved
+- Export — copies to clipboard; selectable text overlay fallback for iOS PWA
+- Delete individual entries
 
 ---
 
@@ -136,7 +136,7 @@ Bloom duration: 20–60 seconds, adjustable. 30s standard, 45s for very fresh be
 |---|---|
 | `index.html` | Complete app — single file, all HTML/CSS/JS |
 | `sw.js` | Service worker — offline caching, PWA |
-| `apple-touch-icon.png` | Home screen icon |
+| `apple-touch-icon.png` | Home screen icon (180×180) |
 | `README.md` | This file |
 
 ---
@@ -156,19 +156,22 @@ Works fully offline after first load.
 
 | Version | Changes |
 |---|---|
-| v1.0 | Initial release — calculator, 4-pour, Four-Six, brew timer, chimes |
-| v1.1 | By-cups and by-grams input modes · Grind settings corrected to real V60 range · New language |
+| v1.0 | Initial release — V60 calculator, 4-pour, Four-Six, brew timer, chimes |
+| v1.1 | By-cups and by-grams input modes · Grind settings corrected to real V60 range |
+| v1.2 | Audio context iOS fix · Wake Lock (screen stays on while brewing) |
+| v1.3 | Brew journal — save, reload, export · Journal icon in header |
+| v1.4 | Chemex 8-cup brewer · Brewer tile selector · Correct card order |
+| v1.5 | French Press · Steep timer · Brewer-aware retention math · Grind table extended |
+| v1.6 | Next-time adjuster (grind/coffee) · Reminder toast on Brew again · French press done message · Bloom pill fix |
 
 ---
 
 ## Coming next
 
-- Brew journal — save notes from each brew, reload settings
-- French Press
-- Chemex
 - Aeropress
+- Tasting notes with structured fields
 
 ---
 
-*Built with Claude · Anthropic*  
+*Built with Claude · Anthropic*
 *By Omar — who brews and enjoys coffee.*

@@ -923,7 +923,75 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
 .modal-btn.secondary { background: var(--bg); color: var(--ink2); }
 .modal-btn.secondary:hover { background: var(--border); }
 
-/* ─── EXPORT OVERLAY ──────────────────────────────────── */
+/* ─── NEXT TIME ADJUSTER ─────────────────────────────── */
+.next-time-section { margin-bottom: 16px; }
+.next-time-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.next-time-btn {
+  flex: 1;
+  padding: 8px 6px;
+  border-radius: var(--btn-radius);
+  border: var(--card-border);
+  background: var(--bg);
+  color: var(--ink2);
+  cursor: pointer;
+  font-family: var(--body-font);
+  font-size: 0.78rem;
+  font-style: italic;
+  text-align: center;
+  transition: all 0.18s;
+}
+.next-time-btn:hover { border-color: var(--accent-lt); color: var(--accent); }
+.next-time-btn.on { background: var(--accent); color: #fff; border-color: var(--accent); font-style: normal; font-weight: 600; }
+
+/* ─── REMINDER TOAST ─────────────────────────────────── */
+#reminderToast {
+  display: none;
+  position: fixed;
+  top: calc(70px + var(--safe-top));
+  left: 16px; right: 16px;
+  z-index: 50;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--card-radius);
+  padding: 12px 16px;
+  font-family: var(--body-font);
+  font-size: 0.95rem;
+  font-style: italic;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  animation: none;
+}
+#reminderToast.show {
+  display: block;
+  animation: toastIn 0.35s ease both;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── JOURNAL REMINDER BADGE ─────────────────────────── */
+.reminder-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--accent-f);
+  border: 1px solid rgba(193,123,58,0.3);
+  color: var(--accent);
+  font-family: var(--num-font);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: var(--pill-radius);
+  margin: 0 16px 10px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .export-overlay {
   display: none;
   position: fixed; inset: 0;
@@ -978,6 +1046,7 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
 <body>
 
 <div id="offlineBadge">OFFLINE</div>
+<div id="reminderToast"></div>
 
 <!-- ══════════════════════════════════════════
      SCREEN 1 — CALCULATOR
@@ -989,7 +1058,7 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
       <div class="app-sub">✦ brews and enjoys coffee ✦</div>
     </div>
     <button class="btn-icon" onclick="showJournal()" title="Brew Journal">📓</button>
-    <div class="version-badge">v1.5 · V60 · Chemex · French Press</div>
+    <div class="version-badge">v1.6 · V60 · Chemex · French Press</div>
   </header>
 
   <div class="screen-body" id="calcBody">
@@ -1839,7 +1908,9 @@ function tick() {
     timerInterval = null;
     playDone();
     document.getElementById('doneBanner').style.display = 'block';
-    document.getElementById('doneSub').textContent = `${targetYield()}g brewed. Let it cool a moment — flavors develop as it drops to ~70°C.`;
+    document.getElementById('doneSub').textContent = state.brewer === 'frenchpress'
+      ? 'Pour immediately — don\'t let it sit or it keeps extracting.'
+      : `${targetYield()}g brewed. Let it cool a moment — flavors develop as it drops to ~70°C.`;
     document.getElementById('timerControls').style.display = 'none';
   }
 
@@ -1985,6 +2056,22 @@ document.addEventListener('visibilitychange', () => {
 const JOURNAL_KEY = 'omarCoffeeJournal';
 const JOURNAL_MAX = 20;
 
+// Next-time adjuster state (reset each time modal opens)
+let nextTimeGrind = null;   // 'finer' | 'coarser' | null
+let nextTimeCoffee = null;  // 'more' | 'less' | null
+
+function toggleNextTime(type, value) {
+  if (type === 'grind') {
+    nextTimeGrind = nextTimeGrind === value ? null : value;
+    document.getElementById('ntGrindFiner').classList.toggle('on', nextTimeGrind === 'finer');
+    document.getElementById('ntGrindCoarser').classList.toggle('on', nextTimeGrind === 'coarser');
+  } else {
+    nextTimeCoffee = nextTimeCoffee === value ? null : value;
+    document.getElementById('ntCoffeeMore').classList.toggle('on', nextTimeCoffee === 'more');
+    document.getElementById('ntCoffeeLess').classList.toggle('on', nextTimeCoffee === 'less');
+  }
+}
+
 function loadJournal() {
   try { return JSON.parse(localStorage.getItem(JOURNAL_KEY)) || []; }
   catch(e) { return []; }
@@ -2016,6 +2103,11 @@ function brewSummaryText() {
 }
 
 function saveBrewPrompt() {
+  nextTimeGrind = null;
+  nextTimeCoffee = null;
+  ['ntGrindFiner','ntGrindCoarser','ntCoffeeMore','ntCoffeeLess'].forEach(id =>
+    document.getElementById(id).classList.remove('on')
+  );
   document.getElementById('modalSummary').textContent = brewSummaryText();
   document.getElementById('brewNotes').value = '';
   document.getElementById('saveModal').classList.add('open');
@@ -2038,7 +2130,8 @@ function confirmSave() {
     date: `${dateStr} · ${timeStr}`,
     summary: brewSummaryText(),
     notes,
-    // Store full settings for reload
+    nextTimeGrind,
+    nextTimeCoffee,
     settings: {
       brewer: state.brewer,
       inputMode: state.inputMode,
@@ -2095,12 +2188,21 @@ function renderJournal() {
       return parts.map(p => `<span class="journal-meta-tag">${p}</span>`).join('');
     }).join('');
 
+    // Reminder badge
+    const reminders = [];
+    if (entry.nextTimeGrind) reminders.push(entry.nextTimeGrind === 'finer' ? '↓ Grind finer' : '↑ Grind coarser');
+    if (entry.nextTimeCoffee) reminders.push(entry.nextTimeCoffee === 'more' ? '+ More coffee' : '− Less coffee');
+    const reminderHTML = reminders.length
+      ? `<div class="reminder-badge">⚡ Next time: ${reminders.join(' · ')}</div>`
+      : '';
+
     card.innerHTML = `
       <div class="journal-card-header">
         <div class="journal-card-title">${lines[0]}</div>
         <div class="journal-card-date">${entry.date}</div>
       </div>
       <div class="journal-card-meta">${tags}</div>
+      ${reminderHTML}
       ${entry.notes ? `<div class="journal-card-notes">${entry.notes}</div>` : ''}
       <div class="journal-card-actions">
         <button class="journal-btn primary" onclick="reloadBrew(${entry.id})">Brew again</button>
@@ -2152,6 +2254,13 @@ function reloadBrew(id) {
   }
 
   renderCalc();
+
+  // Show reminder toast if next-time adjustments were saved
+  const reminders = [];
+  if (entry.nextTimeGrind) reminders.push(entry.nextTimeGrind === 'finer' ? '↓ grind finer' : '↑ grind coarser');
+  if (entry.nextTimeCoffee) reminders.push(entry.nextTimeCoffee === 'more' ? '+ more coffee' : '− less coffee');
+  if (reminders.length) showReminderToast('Next time: ' + reminders.join(' · '));
+
   showScreen('calcScreen');
 }
 
@@ -2162,6 +2271,15 @@ function deleteEntry(id) {
   renderJournal();
 }
 
+function showReminderToast(message) {
+  const toast = document.getElementById('reminderToast');
+  toast.textContent = message;
+  toast.classList.remove('show');
+  void toast.offsetWidth; // force reflow to restart animation
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 4000);
+}
+
 function exportJournal() {
   const entries = loadJournal();
   if (entries.length === 0) return;
@@ -2170,6 +2288,12 @@ function exportJournal() {
   entries.forEach((e, i) => {
     lines.push(`BREW ${i + 1} · ${e.date}`);
     lines.push(e.summary);
+    if (e.nextTimeGrind || e.nextTimeCoffee) {
+      const r = [];
+      if (e.nextTimeGrind) r.push(e.nextTimeGrind === 'finer' ? 'Grind finer' : 'Grind coarser');
+      if (e.nextTimeCoffee) r.push(e.nextTimeCoffee === 'more' ? 'More coffee' : 'Less coffee');
+      lines.push(`Next time: ${r.join(' · ')}`);
+    }
     if (e.notes) lines.push(`Notes: ${e.notes}`);
     lines.push('');
   });
@@ -2233,8 +2357,22 @@ renderCalc();
     <div class="modal-title">Save this brew</div>
     <div class="modal-sub">How did it taste? What would you change?</div>
     <div class="modal-summary" id="modalSummary"></div>
+
+    <div class="next-time-section">
+      <label class="modal-label">Next time — grind</label>
+      <div class="next-time-row">
+        <button class="next-time-btn" id="ntGrindFiner" onclick="toggleNextTime('grind','finer')">↓ Finer</button>
+        <button class="next-time-btn" id="ntGrindCoarser" onclick="toggleNextTime('grind','coarser')">↑ Coarser</button>
+      </div>
+      <label class="modal-label">Next time — coffee amount</label>
+      <div class="next-time-row">
+        <button class="next-time-btn" id="ntCoffeeMore" onclick="toggleNextTime('coffee','more')">+ More coffee</button>
+        <button class="next-time-btn" id="ntCoffeeLess" onclick="toggleNextTime('coffee','less')">− Less coffee</button>
+      </div>
+    </div>
+
     <label class="modal-label" for="brewNotes">Notes (optional)</label>
-    <textarea id="brewNotes" placeholder="Grind was slightly coarse, next time try 36. Nice bloom. Ratio felt right for this bean…"></textarea>
+    <textarea id="brewNotes" placeholder="Nice bloom. Slightly bitter — will try coarser next time. Ratio felt right for this bean…"></textarea>
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="closeSaveModal()">Cancel</button>
       <button class="modal-btn primary" onclick="confirmSave()">Save brew</button>
