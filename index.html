@@ -1670,13 +1670,16 @@ function setBrewer(b) {
   if (b === 'chemex') {
     setBloom(45);
     if (state.cups === 7) setCups(4);
+    setRatio(16);
   } else if (b === 'frenchpress') {
     state.cups = 7;
     document.getElementById('cupsSlider').value = 7;
     document.getElementById('cupsVal').textContent = 7;
+    setRatio(14);
   } else {
     setBloom(30);
     if (state.cups === 7) setCups(4);
+    setRatio(15);
   }
   renderCalc();
 }
