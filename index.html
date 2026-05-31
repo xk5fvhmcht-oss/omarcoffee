@@ -1061,7 +1061,7 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
       ☕ <span id="brewingPillTime">0:00</span>
     </button>
     <button class="btn-icon" onclick="showJournal()" title="Brew Journal">📓</button>
-    <div class="version-badge">v1.7 · V60 · Chemex · French Press</div>
+    <div class="version-badge">v1.8 · V60 · Chemex · French Press</div>
   </header>
 
   <div class="screen-body" id="calcBody">
@@ -1112,20 +1112,20 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
       <div id="cupsMode">
         <div class="slider-wrap">
           <div class="slider-head">
-            <span class="slider-name">number of cups</span>
-            <span class="slider-val" id="cupsVal">4</span>
+            <span class="slider-name" id="countLabel">number of mugs</span>
+            <span class="slider-val" id="cupsVal">1</span>
           </div>
-          <input type="range" id="cupsSlider" min="1" max="7" step="1" value="4">
+          <input type="range" id="cupsSlider" min="1" max="8" step="1" value="1">
         </div>
-        <div class="section-hint" style="margin-bottom:8px;">CUP SIZE</div>
+        <div class="section-hint" style="margin-bottom:8px;">SERVING SIZE</div>
         <div class="mode-row">
-          <button class="mode-btn" id="cupSizeSmall" onclick="setCupSize(180)">
-            <span class="emoji">🍵</span>Small
-            <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">180 cc</small>
+          <button class="mode-btn" id="cupSizeCup" onclick="setCupSize(120)">
+            <span class="emoji">🍵</span>Cup
+            <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">120 cc</small>
           </button>
-          <button class="mode-btn on" id="cupSizeStd" onclick="setCupSize(250)">
-            <span class="emoji">☕</span>Standard
-            <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">250 cc</small>
+          <button class="mode-btn on" id="cupSizeMug" onclick="setCupSize(240)">
+            <span class="emoji">☕</span>Mug
+            <small style="display:block;font-size:0.68rem;opacity:0.6;margin-top:2px;">240 cc</small>
           </button>
           <button class="mode-btn" id="cupSizeLarge" onclick="setCupSize(350)">
             <span class="emoji">🧋</span>Large mug
@@ -1139,22 +1139,25 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
         <div class="slider-wrap">
           <div class="slider-head">
             <span class="slider-name">coffee to grind</span>
-            <span class="slider-val" id="coffeeGramsVal">20 g</span>
+            <span class="slider-val" id="coffeeGramsVal">16 g</span>
           </div>
-          <input type="range" id="coffeeGramsSlider" min="15" max="75" step="1" value="20"
+          <input type="range" id="coffeeGramsSlider" min="8" max="50" step="1" value="16"
             style="background: linear-gradient(to right, #c5e8c9, #2d7d72);">
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
           <span class="slider-name" style="white-space:nowrap;">or type exact:</span>
-          <input type="number" id="coffeeGramsInput" min="15" max="75" value="20"
+          <input type="number" id="coffeeGramsInput" min="8" max="50" value="16"
             style="width:80px;padding:6px 10px;border-radius:var(--btn-radius);border:var(--card-border);
                    background:var(--bg);font-family:var(--num-font);font-size:1rem;color:var(--accent);text-align:center;">
           <span class="slider-name">g</span>
         </div>
         <div class="info-box coffee" style="margin-top:10px;" id="gramsYieldNote">
-          With 20g coffee at 1:15, you'll brew 300g water and get ~260g in the cup.
+          With 16g coffee at 1:15, you'll brew 240g water and get ~208g in the cup.
         </div>
       </div>
+
+      <!-- CAPACITY WARNING -->
+      <div class="info-box" id="capacityWarning" style="display:none;margin-top:12px;background:var(--rose-f);color:var(--rose);border:1px solid rgba(184,92,92,0.3);"></div>
 
       <!-- RATIO -->
       <div style="margin-top:16px;">
@@ -1427,20 +1430,27 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
 // STATE
 // ═══════════════════════════════════════════
 const state = {
-  brewer: 'v60',        // 'v60' | 'chemex' | 'frenchpress'
+  brewer: 'v60',
   inputMode: 'cups',
-  cups: 4,
-  cupSize: 250,
-  coffeeGrams: 20,
-  yield: 1000,
+  cups: 1,
+  cupSize: 240,
+  coffeeGrams: 16,
+  yield: 240,
   ratio: 15,
   method: 'classic',
   roast: 'medium',
   bloomDuration: 30,
-  steepMinutes: 4,      // french press only
+  steepMinutes: 4,
   foursixBalance: 'balanced',
   foursixStrength: 'medium',
   soundOn: true,
+};
+
+// Per-brewer capacity, anchored to coffee weight (the real physical constraint)
+const CAPACITY = {
+  v60:         { rated: 30, hardCap: 50, name: 'V60' },
+  chemex:      { rated: 55, hardCap: 70, name: 'Chemex' },
+  frenchpress: { rated: 60, hardCap: 80, name: 'French press' },
 };
 
 // Derived
@@ -1599,6 +1609,24 @@ function renderCalc() {
       `With ${coffee}g coffee at 1:${state.ratio}, you'll brew ${brew}g water and get ~${yield_}g in the cup.`;
   }
 
+  // Count label follows the serving size
+  const sizeName = state.cupSize === 120 ? 'cup' : state.cupSize === 240 ? 'mug' : 'large mug';
+  const plural = state.cups > 1 ? (sizeName === 'cup' ? 'cups' : sizeName === 'mug' ? 'mugs' : 'large mugs') : sizeName;
+  document.getElementById('countLabel').textContent = 'number of ' + plural;
+
+  // Capacity warning — anchored to coffee weight
+  const cap = CAPACITY[state.brewer];
+  const warnEl = document.getElementById('capacityWarning');
+  if (coffee > cap.hardCap) {
+    warnEl.style.display = 'block';
+    warnEl.innerHTML = `<strong>Over capacity:</strong> ${coffee}g coffee exceeds the ${cap.name}'s hard limit of ${cap.hardCap}g. This won't physically fit — reduce your batch.`;
+  } else if (coffee > cap.rated) {
+    warnEl.style.display = 'block';
+    warnEl.innerHTML = `<strong>Past the comfort zone:</strong> ${coffee}g is above the ${cap.name}'s rated ${cap.rated}g. It'll work, but expect slower drawdown and possible overflow.`;
+  } else {
+    warnEl.style.display = 'none';
+  }
+
   // Hero eyebrow
   const eyebrow = state.brewer === 'chemex'
     ? 'Chemex 8-cup · Breville Smart Grinder Pro'
@@ -1662,8 +1690,10 @@ function renderCalc() {
   const methodLabel = state.brewer === 'frenchpress' ? `${state.steepMinutes} min steep`
     : state.brewer === 'chemex' ? 'bloom + 2 pours'
     : state.method === 'classic' ? '4-pour' : 'Four-Six';
+  const sName = state.cupSize === 120 ? 'cup' : state.cupSize === 240 ? 'mug' : 'large mug';
+  const sPlural = state.cups > 1 ? (sName === 'cup' ? 'cups' : sName === 'mug' ? 'mugs' : 'large mugs') : sName;
   const inputLabel = state.inputMode === 'cups'
-    ? `${state.cups} cup${state.cups > 1 ? 's' : ''} · ${state.cupSize}cc`
+    ? `${state.cups} ${sPlural}`
     : `${coffee}g coffee`;
   document.getElementById('brewBtnSub').textContent = `${brewerLabel} · ${methodLabel} · ${inputLabel}`;
 }
@@ -1671,6 +1701,27 @@ function renderCalc() {
 // ═══════════════════════════════════════════
 // CONTROLS
 // ═══════════════════════════════════════════
+
+// ── Max cups that keep coffee at or under the hard cap ──
+function maxCupsForBrewer() {
+  const cap = CAPACITY[state.brewer];
+  const rf = state.brewer === 'frenchpress' ? 1 : 2;
+  // coffee = (cups × cupSize) / (ratio − rf) ≤ hardCap
+  // cups ≤ hardCap × (ratio − rf) / cupSize
+  const maxCups = Math.floor(cap.hardCap * (state.ratio - rf) / state.cupSize);
+  return Math.max(1, Math.min(8, maxCups));
+}
+
+function applyCupsSliderMax() {
+  const maxC = maxCupsForBrewer();
+  const slider = document.getElementById('cupsSlider');
+  slider.max = maxC;
+  if (state.cups > maxC) {
+    state.cups = maxC;
+    slider.value = maxC;
+    document.getElementById('cupsVal').textContent = maxC;
+  }
+}
 
 // ── Brewer ──
 function setBrewer(b) {
@@ -1680,18 +1731,29 @@ function setBrewer(b) {
   document.getElementById('brewerFrenchpress').classList.toggle('on', b === 'frenchpress');
   if (b === 'chemex') {
     setBloom(45);
-    if (state.cups === 7) setCups(4);
-    setRatio(16);
+    state.ratio = 16;
+    state.cupSize = 120; setCupSizeButtons(120);
+    state.cups = 4;
   } else if (b === 'frenchpress') {
-    state.cups = 7;
-    document.getElementById('cupsSlider').value = 7;
-    document.getElementById('cupsVal').textContent = 7;
-    setRatio(14);
+    setBloom(30);
+    state.ratio = 14;
+    state.cupSize = 120; setCupSizeButtons(120);
+    state.cups = 6;
   } else {
     setBloom(30);
-    if (state.cups === 7) setCups(4);
-    setRatio(15);
+    state.ratio = 15;
+    state.cupSize = 240; setCupSizeButtons(240);
+    state.cups = 1;
   }
+  // Sync ratio UI
+  document.getElementById('ratioSlider').value = state.ratio;
+  document.getElementById('ratioVal').textContent = '1 : ' + state.ratio;
+  [13,15,17].forEach(n => document.getElementById('ratioPill'+n)?.classList.remove('on'));
+  document.getElementById('ratioPill'+state.ratio)?.classList.add('on');
+  // Sync cups UI + clamp
+  document.getElementById('cupsSlider').value = state.cups;
+  document.getElementById('cupsVal').textContent = state.cups;
+  applyCupsSliderMax();
   renderCalc();
 }
 
@@ -1723,12 +1785,16 @@ function setCups(n) {
   popAnim('cupsVal');
   renderCalc();
 }
+function setCupSizeButtons(cc) {
+  ['Cup','Mug','Large'].forEach(n => document.getElementById('cupSize'+n)?.classList.remove('on'));
+  if (cc === 120) document.getElementById('cupSizeCup').classList.add('on');
+  else if (cc === 240) document.getElementById('cupSizeMug').classList.add('on');
+  else if (cc === 350) document.getElementById('cupSizeLarge').classList.add('on');
+}
 function setCupSize(cc) {
   state.cupSize = cc;
-  ['Small','Std','Large'].forEach(n => document.getElementById('cupSize'+n)?.classList.remove('on'));
-  if (cc === 180) document.getElementById('cupSizeSmall').classList.add('on');
-  else if (cc === 250) document.getElementById('cupSizeStd').classList.add('on');
-  else if (cc === 350) document.getElementById('cupSizeLarge').classList.add('on');
+  setCupSizeButtons(cc);
+  applyCupsSliderMax();
   renderCalc();
 }
 
@@ -1754,6 +1820,7 @@ function setRatio(v) {
   [13,15,17].forEach(n => document.getElementById('ratioPill'+n)?.classList.remove('on'));
   const pill = document.getElementById('ratioPill'+v);
   if (pill) pill.classList.add('on');
+  applyCupsSliderMax();
   renderCalc();
 }
 function setMethod(m) {
@@ -1804,7 +1871,7 @@ document.getElementById('coffeeGramsSlider').addEventListener('input', e => {
   setCoffeeGrams(+e.target.value);
 });
 document.getElementById('coffeeGramsInput').addEventListener('input', e => {
-  const v = Math.min(75, Math.max(15, +e.target.value || 15));
+  const v = Math.min(50, Math.max(8, +e.target.value || 8));
   setCoffeeGrams(v);
 });
 document.getElementById('steepSlider').addEventListener('input', e => {
@@ -1819,6 +1886,7 @@ document.getElementById('ratioSlider').addEventListener('input', e => {
   document.getElementById('ratioVal').textContent = '1 : ' + state.ratio;
   popAnim('ratioVal');
   [13,15,17].forEach(n => document.getElementById('ratioPill'+n)?.classList.remove('on'));
+  applyCupsSliderMax();
   renderCalc();
 });
 document.getElementById('bloomSlider').addEventListener('input', e => {
@@ -2345,15 +2413,17 @@ function reloadBrew(id) {
   // Sync UI controls
   document.getElementById('brewerV60').classList.toggle('on', state.brewer === 'v60');
   document.getElementById('brewerChemex').classList.toggle('on', state.brewer === 'chemex');
+  document.getElementById('brewerFrenchpress').classList.toggle('on', state.brewer === 'frenchpress');
   setInputMode(state.inputMode);
+  setCupSizeButtons(state.cupSize);
+  document.getElementById('ratioSlider').value = state.ratio;
+  document.getElementById('ratioVal').textContent = '1 : ' + state.ratio;
+  applyCupsSliderMax();
   document.getElementById('cupsSlider').value = state.cups;
   document.getElementById('cupsVal').textContent = state.cups;
-  setCupSize(state.cupSize);
   document.getElementById('coffeeGramsSlider').value = state.coffeeGrams;
   document.getElementById('coffeeGramsInput').value = state.coffeeGrams;
   document.getElementById('coffeeGramsVal').textContent = state.coffeeGrams + ' g';
-  document.getElementById('ratioSlider').value = state.ratio;
-  document.getElementById('ratioVal').textContent = '1 : ' + state.ratio;
   setMethod(state.method);
   setRoast(state.roast);
   setBloom(state.bloomDuration);
@@ -2436,11 +2506,8 @@ window.addEventListener('offline', () => { document.getElementById('offlineBadge
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
-// Default: 4 cups × 250cc = 1000g yield target
-state.cups = 4;
-state.cupSize = 250;
-state.inputMode = 'cups';
-renderCalc();
+// Default: V60, 1 mug (240cc), 1:15
+setBrewer('v60');
 </script>
 <!-- ══════════════════════════════════════════
      SCREEN 3 — BREW JOURNAL
