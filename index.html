@@ -1061,7 +1061,7 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
       ☕ <span id="brewingPillTime">0:00</span>
     </button>
     <button class="btn-icon" onclick="showJournal()" title="Brew Journal">📓</button>
-    <div class="version-badge">v1.8 · V60 · Chemex · French Press</div>
+    <div class="version-badge">v1.9 · V60 · Chemex · French Press</div>
   </header>
 
   <div class="screen-body" id="calcBody">
@@ -1303,7 +1303,7 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
             <span class="slider-name">steep time</span>
             <span class="slider-val" id="steepVal">4 min</span>
           </div>
-          <input type="range" id="steepSlider" min="3" max="5" step="0.5" value="4"
+          <input type="range" id="steepSlider" min="3" max="5" step="1" value="4"
             style="background: linear-gradient(to right, #c5e8c9, #2d7d72);">
         </div>
         <div class="pill-row">
@@ -1648,16 +1648,22 @@ function renderCalc() {
   document.getElementById('grindSub').textContent = `SETTING ${grind} OF 60 · ${coarseness}`;
   document.getElementById('grindLabel').textContent = GRIND_DESC[grind] || 'Start here and adjust based on taste.';
 
-  // Temp
+  // Temp — Four-Six uses 1°C lower (Kasuya's method)
   const t = TEMP[state.roast];
-  document.getElementById('tempAdvice').innerHTML = `<strong>${t.c}°C / ${t.f}°F</strong> — ${t.note}`;
+  const fsAdj = (state.brewer === 'v60' && state.method === 'foursix') ? 1 : 0;
+  const tempC = t.c - fsAdj;
+  const tempF = t.f - Math.round(fsAdj * 1.8);
+  const fsNote = fsAdj ? ' (1°C lower for Four-Six)' : '';
+  document.getElementById('tempAdvice').innerHTML = `<strong>${tempC}°C / ${tempF}°F</strong>${fsNote} — ${t.note}`;
 
   // Technique card visibility
   const isFP = state.brewer === 'frenchpress';
+  const isFoursix = state.brewer === 'v60' && state.method === 'foursix';
   document.getElementById('v60Methods').style.display = state.brewer === 'v60' ? 'block' : 'none';
   document.getElementById('chemexNote').style.display = state.brewer === 'chemex' ? 'block' : 'none';
   document.getElementById('frenchpressControls').style.display = isFP ? 'block' : 'none';
-  document.getElementById('bloomControls').style.display = isFP ? 'none' : 'block';
+  // Bloom hidden for French press (no bloom) and Four-Six (first pour serves as bloom)
+  document.getElementById('bloomControls').style.display = (isFP || isFoursix) ? 'none' : 'block';
   document.getElementById('techniqueHint').textContent = isFP ? 'IMMERSION · STEEP & PRESS' : 'POUR METHOD & BLOOM';
   document.getElementById('planLabel').textContent = isFP ? 'STEEP PLAN' : 'POUR PLAN';
 
@@ -1723,6 +1729,20 @@ function applyCupsSliderMax() {
   }
 }
 
+function applyGramsSliderMax() {
+  const cap = CAPACITY[state.brewer].hardCap;
+  const slider = document.getElementById('coffeeGramsSlider');
+  const input = document.getElementById('coffeeGramsInput');
+  slider.max = cap;
+  input.max = cap;
+  if (state.coffeeGrams > cap) {
+    state.coffeeGrams = cap;
+    slider.value = cap;
+    input.value = cap;
+    document.getElementById('coffeeGramsVal').textContent = cap + ' g';
+  }
+}
+
 // ── Brewer ──
 function setBrewer(b) {
   state.brewer = b;
@@ -1754,6 +1774,7 @@ function setBrewer(b) {
   document.getElementById('cupsSlider').value = state.cups;
   document.getElementById('cupsVal').textContent = state.cups;
   applyCupsSliderMax();
+  applyGramsSliderMax();
   renderCalc();
 }
 
@@ -1808,10 +1829,6 @@ function setCoffeeGrams(g) {
   renderCalc();
 }
 
-function setYield(v) {
-  // legacy — only used if cups mode calls it directly; now just re-routes
-  renderCalc();
-}
 function setRatio(v) {
   state.ratio = v;
   document.getElementById('ratioSlider').value = v;
@@ -1871,7 +1888,8 @@ document.getElementById('coffeeGramsSlider').addEventListener('input', e => {
   setCoffeeGrams(+e.target.value);
 });
 document.getElementById('coffeeGramsInput').addEventListener('input', e => {
-  const v = Math.min(50, Math.max(8, +e.target.value || 8));
+  const cap = CAPACITY[state.brewer].hardCap;
+  const v = Math.min(cap, Math.max(8, +e.target.value || 8));
   setCoffeeGrams(v);
 });
 document.getElementById('steepSlider').addEventListener('input', e => {
@@ -2271,11 +2289,14 @@ function brewSummaryText() {
   const inputDesc = state.inputMode === 'cups'
     ? `${state.cups} cup${state.cups > 1 ? 's' : ''} × ${state.cupSize}cc`
     : `${coffee}g coffee`;
+  const fsTempAdj = (state.brewer === 'v60' && state.method === 'foursix') ? 1 : 0;
+  const hasBloom = state.brewer !== 'frenchpress' && !(state.brewer === 'v60' && state.method === 'foursix');
+  const bloomPart = hasBloom ? ` · Bloom: ${state.bloomDuration}s` : '';
   return [
     `${brewerLabel} · ${inputDesc} · 1:${state.ratio}`,
     `Coffee: ${coffee}g · Brew water: ${brew}g · Cup yield: ~${yield_}g`,
     `Technique: ${methodLabel} · Roast: ${state.roast}`,
-    `Grind: ${grind} · Temp: ${TEMP[state.roast].c}°C · Bloom: ${state.bloomDuration}s`,
+    `Grind: ${grind} · Temp: ${TEMP[state.roast].c - fsTempAdj}°C${bloomPart}`,
   ].join('\n');
 }
 
@@ -2373,9 +2394,13 @@ function renderJournal() {
       ? `<div class="reminder-badge">⚡ Next time: ${reminders.join(' · ')}</div>`
       : '';
 
+    // Brewer icon for fast scanning
+    const brewerIcon = entry.settings?.brewer === 'chemex' ? '⚗️'
+      : entry.settings?.brewer === 'frenchpress' ? '🧊' : '🫙';
+
     card.innerHTML = `
       <div class="journal-card-header">
-        <div class="journal-card-title">${lines[0]}</div>
+        <div class="journal-card-title">${brewerIcon} ${lines[0]}</div>
         <div class="journal-card-date">${entry.date}</div>
       </div>
       <div class="journal-card-meta">${tags}</div>
@@ -2400,7 +2425,10 @@ function reloadBrew(id) {
   state.brewer = s.brewer || 'v60';
   state.inputMode = s.inputMode || 'cups';
   state.cups = s.cups || 4;
-  state.cupSize = s.cupSize || 250;
+  // Snap legacy sizes (180/250 from pre-v1.8) to nearest current value
+  const rawSize = s.cupSize || 240;
+  state.cupSize = [120, 240, 350].reduce((a, b) =>
+    Math.abs(b - rawSize) < Math.abs(a - rawSize) ? b : a);
   state.coffeeGrams = s.coffeeGrams || 20;
   state.ratio = s.ratio || 15;
   state.method = s.method || 'classic';
