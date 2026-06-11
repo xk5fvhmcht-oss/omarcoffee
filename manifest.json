@@ -1,0 +1,13 @@
+{
+  "name": "Omar Coffee",
+  "short_name": "Omar Coffee",
+  "description": "Pour slow. Think less. Drink well. A coffee calculator and brew timer for V60, Chemex, and French press.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fdf8f0",
+  "theme_color": "#fdf8f0",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

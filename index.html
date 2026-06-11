@@ -10,6 +10,7 @@
 <meta name="theme-color" content="#fdf8f0">
 <meta name="description" content="A pour over coffee calculator, with feeling. By Omar.">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="manifest" href="./manifest.json">
 <title>Omar Coffee — Pour Over</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1061,7 +1062,7 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
       ☕ <span id="brewingPillTime">0:00</span>
     </button>
     <button class="btn-icon" onclick="showJournal()" title="Brew Journal">📓</button>
-    <div class="version-badge">v1.9 · V60 · Chemex · French Press</div>
+    <div class="version-badge">v2.0 · V60 · Chemex · French Press</div>
   </header>
 
   <div class="screen-body" id="calcBody">
@@ -1702,6 +1703,7 @@ function renderCalc() {
     ? `${state.cups} ${sPlural}`
     : `${coffee}g coffee`;
   document.getElementById('brewBtnSub').textContent = `${brewerLabel} · ${methodLabel} · ${inputLabel}`;
+  persistSettings();
 }
 
 // ═══════════════════════════════════════════
@@ -1923,6 +1925,8 @@ let timerInterval = null;
 let audioKeepAlive = null;
 let timerRunning = false;
 let elapsed = 0;
+let pausedElapsed = 0;      // banked seconds across pauses
+let startTimestamp = null;  // Date.now() at last (re)start
 let currentStepIdx = 0;
 let stepElapsed = 0;
 let ringerWarnShown = false; // reset each brew session
@@ -1965,6 +1969,8 @@ function updateBrewingPill() {
 function startBrew() {
   brewSteps = buildPourPlan();
   elapsed = 0;
+  pausedElapsed = 0;
+  startTimestamp = null;
   currentStepIdx = 0;
   stepElapsed = 0;
   timerRunning = false;
@@ -2012,6 +2018,9 @@ function showScreen(id) {
 
 function toggleTimer() {
   if (timerRunning) {
+    // Pause — bank the elapsed time
+    pausedElapsed = elapsed;
+    startTimestamp = null;
     timerRunning = false;
     clearInterval(timerInterval);
     clearInterval(audioKeepAlive);
@@ -2023,6 +2032,7 @@ function toggleTimer() {
     // Start / Resume — must happen inside this user gesture for iOS audio unlock
     unlockAudio();
     requestWakeLock();
+    startTimestamp = Date.now();
     timerRunning = true;
     document.getElementById('timerStartBtn').textContent = 'Pause';
     timerInterval = setInterval(tick, 1000);
@@ -2030,6 +2040,7 @@ function toggleTimer() {
     audioKeepAlive = setInterval(() => {
       if (audioCtx && audioCtx.state !== 'running') audioCtx.resume();
     }, 20000);
+    tick(); // immediate render so resume doesn't wait a second
   }
 }
 
@@ -2041,6 +2052,8 @@ function resetBrew() {
   audioKeepAlive = null;
   releaseWakeLock();
   elapsed = 0;
+  pausedElapsed = 0;
+  startTimestamp = null;
   currentStepIdx = 0;
   stepElapsed = 0;
   ringerWarnShown = false;
@@ -2054,18 +2067,32 @@ function resetBrew() {
 }
 
 function tick() {
-  elapsed++;
-  stepElapsed++;
-
-  // Advance step if current step duration complete
-  const step = brewSteps[currentStepIdx];
-  if (stepElapsed >= step.duration && currentStepIdx < brewSteps.length - 1) {
-    currentStepIdx++;
-    stepElapsed = 0;
-    playChime();
+  // Anchor to wall-clock time — immune to setInterval throttling/suspension.
+  // elapsed = banked time from pauses + time since last (re)start
+  if (timerRunning && startTimestamp) {
+    elapsed = pausedElapsed + Math.floor((Date.now() - startTimestamp) / 1000);
   }
 
-  // Check fully done — use elapsed vs total
+  // Derive current step and stepElapsed from elapsed (don't count ticks)
+  const prevStepIdx = currentStepIdx;
+  let acc = 0;
+  currentStepIdx = brewSteps.length - 1;
+  for (let i = 0; i < brewSteps.length; i++) {
+    if (elapsed < acc + brewSteps[i].duration) {
+      currentStepIdx = i;
+      break;
+    }
+    acc += brewSteps[i].duration;
+  }
+  // acc now holds the start time of currentStepIdx if we broke; recompute cleanly
+  let stepStart = 0;
+  for (let i = 0; i < currentStepIdx; i++) stepStart += brewSteps[i].duration;
+  stepElapsed = elapsed - stepStart;
+
+  // Chime once if we advanced (even past multiple steps after a suspension)
+  if (currentStepIdx > prevStepIdx) playChime();
+
+  // Check fully done
   const totalTime = brewSteps.reduce((a, s) => a + s.duration, 0);
   if (elapsed >= totalTime) {
     timerRunning = false;
@@ -2073,6 +2100,7 @@ function tick() {
     clearInterval(audioKeepAlive);
     timerInterval = null;
     audioKeepAlive = null;
+    elapsed = totalTime;
     stepElapsed = brewSteps[brewSteps.length - 1].duration;
     releaseWakeLock();
     playDone();
@@ -2087,6 +2115,11 @@ function tick() {
   updateBrewingPill();
   updateBrewBtn();
 }
+
+// Catch up immediately when the page becomes visible again (iOS suspension)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && timerRunning) tick();
+});
 
 function renderTimerScreen() {
   // Elapsed clock
@@ -2272,7 +2305,8 @@ function loadJournal() {
   catch(e) { return []; }
 }
 function saveJournal(entries) {
-  localStorage.setItem(JOURNAL_KEY, JSON.stringify(entries));
+  try { localStorage.setItem(JOURNAL_KEY, JSON.stringify(entries)); }
+  catch(e) { /* storage full or private mode — fail silently, entry stays in memory this session */ }
 }
 
 function brewSummaryText() {
@@ -2532,10 +2566,78 @@ window.addEventListener('online', () => { document.getElementById('offlineBadge'
 window.addEventListener('offline', () => { document.getElementById('offlineBadge').style.display = 'block'; });
 
 // ═══════════════════════════════════════════
+// SETTINGS PERSISTENCE — open the app the way you left it
+// ═══════════════════════════════════════════
+const SETTINGS_KEY = 'omarCoffeeSettings';
+
+function persistSettings() {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+      brewer: state.brewer,
+      inputMode: state.inputMode,
+      cups: state.cups,
+      cupSize: state.cupSize,
+      coffeeGrams: state.coffeeGrams,
+      ratio: state.ratio,
+      method: state.method,
+      roast: state.roast,
+      bloomDuration: state.bloomDuration,
+      steepMinutes: state.steepMinutes,
+      foursixBalance: state.foursixBalance,
+      foursixStrength: state.foursixStrength,
+    }));
+  } catch(e) {}
+}
+
+function restoreSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+    if (!saved) return false;
+    // setBrewer establishes brewer defaults + UI, then we layer saved values on top
+    setBrewer(saved.brewer || 'v60');
+    state.inputMode = saved.inputMode || 'cups';
+    state.cups = saved.cups || state.cups;
+    state.cupSize = [120,240,350].includes(saved.cupSize) ? saved.cupSize : state.cupSize;
+    state.coffeeGrams = saved.coffeeGrams || state.coffeeGrams;
+    state.ratio = saved.ratio || state.ratio;
+    state.method = saved.method || 'classic';
+    state.roast = saved.roast || 'medium';
+    state.bloomDuration = saved.bloomDuration || state.bloomDuration;
+    state.steepMinutes = saved.steepMinutes || 4;
+    state.foursixBalance = saved.foursixBalance || 'balanced';
+    state.foursixStrength = saved.foursixStrength || 'medium';
+    // Sync all UI
+    setInputMode(state.inputMode);
+    setCupSizeButtons(state.cupSize);
+    document.getElementById('ratioSlider').value = state.ratio;
+    document.getElementById('ratioVal').textContent = '1 : ' + state.ratio;
+    [13,15,17].forEach(n => document.getElementById('ratioPill'+n)?.classList.remove('on'));
+    document.getElementById('ratioPill'+state.ratio)?.classList.add('on');
+    applyCupsSliderMax();
+    applyGramsSliderMax();
+    document.getElementById('cupsSlider').value = state.cups;
+    document.getElementById('cupsVal').textContent = state.cups;
+    document.getElementById('coffeeGramsSlider').value = state.coffeeGrams;
+    document.getElementById('coffeeGramsInput').value = state.coffeeGrams;
+    document.getElementById('coffeeGramsVal').textContent = state.coffeeGrams + ' g';
+    setMethod(state.method);
+    setRoast(state.roast);
+    setBloom(state.bloomDuration);
+    setSteep(state.steepMinutes);
+    if (state.method === 'foursix') {
+      setFoursixBalance(state.foursixBalance);
+      setFoursixStrength(state.foursixStrength);
+    }
+    renderCalc();
+    return true;
+  } catch(e) { return false; }
+}
+
+// ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
-// Default: V60, 1 mug (240cc), 1:15
-setBrewer('v60');
+// Restore last session, or default: V60, 1 mug (240cc), 1:15
+if (!restoreSettings()) setBrewer('v60');
 </script>
 <!-- ══════════════════════════════════════════
      SCREEN 3 — BREW JOURNAL

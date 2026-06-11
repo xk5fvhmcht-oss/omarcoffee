@@ -1,9 +1,10 @@
-// Omar Coffee — Service Worker v1.6
-const CACHE = 'omar-coffee-v1.9';
+// Omar Coffee — Service Worker v2.0
+const CACHE = 'omar-coffee-v2.0';
 
 const ASSETS = [
   './',
   './index.html',
+  './manifest.json',
   './apple-touch-icon.png',
   'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,300;1,9..144,500&family=DM+Mono:wght@300;400&family=Caveat:wght@400;600&display=swap',
 ];
