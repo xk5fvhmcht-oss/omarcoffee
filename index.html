@@ -1822,10 +1822,10 @@ function setCupSize(cc) {
 }
 
 // ── Grams ──
-function setCoffeeGrams(g) {
+function setCoffeeGrams(g, skipInputWrite) {
   state.coffeeGrams = g;
   document.getElementById('coffeeGramsSlider').value = g;
-  document.getElementById('coffeeGramsInput').value = g;
+  if (!skipInputWrite) document.getElementById('coffeeGramsInput').value = g;
   document.getElementById('coffeeGramsVal').textContent = g + ' g';
   popAnim('coffeeGramsVal');
   renderCalc();
@@ -1890,6 +1890,18 @@ document.getElementById('coffeeGramsSlider').addEventListener('input', e => {
   setCoffeeGrams(+e.target.value);
 });
 document.getElementById('coffeeGramsInput').addEventListener('input', e => {
+  // While typing: update state only if the partial value is already valid.
+  // Never write back into the field mid-edit — that's what made "36" impossible to type.
+  const cap = CAPACITY[state.brewer].hardCap;
+  const raw = e.target.value;
+  if (raw === '') return; // field cleared — wait for more typing or blur
+  const v = +raw;
+  if (!isNaN(v) && v >= 8 && v <= cap) {
+    setCoffeeGrams(v, true); // true = don't rewrite the input
+  }
+});
+document.getElementById('coffeeGramsInput').addEventListener('change', e => {
+  // On blur/enter: clamp and write the final value back
   const cap = CAPACITY[state.brewer].hardCap;
   const v = Math.min(cap, Math.max(8, +e.target.value || 8));
   setCoffeeGrams(v);
