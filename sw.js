@@ -1,5 +1,5 @@
 // Omar Coffee — Service Worker v2.0
-const CACHE = 'omar-coffee-v2.0';
+const CACHE = 'omar-coffee-v2.1';
 
 const ASSETS = [
   './',

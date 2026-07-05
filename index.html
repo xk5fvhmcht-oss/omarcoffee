@@ -1062,7 +1062,7 @@ textarea#brewNotes:focus { border-color: var(--accent-lt); }
       ☕ <span id="brewingPillTime">0:00</span>
     </button>
     <button class="btn-icon" onclick="showJournal()" title="Brew Journal">📓</button>
-    <div class="version-badge">v2.0 · V60 · Chemex · French Press</div>
+    <div class="version-badge">v2.1 · V60 · Chemex · French Press</div>
   </header>
 
   <div class="screen-body" id="calcBody">
@@ -1942,36 +1942,41 @@ let startTimestamp = null;  // Date.now() at last (re)start
 let currentStepIdx = 0;
 let stepElapsed = 0;
 let ringerWarnShown = false; // reset each brew session
+let brewSnapshot = null;     // recipe captured at brew start — what the journal records
+
+function brewInProgress() {
+  if (timerRunning) return true;
+  if (brewSteps.length === 0 || elapsed === 0) return false;
+  const total = brewSteps.reduce((a, s) => a + s.duration, 0);
+  return elapsed < total; // done brew = not in progress
+}
 
 function handleBrewBtn() {
-  if (timerRunning || elapsed > 0) {
-    // Brew in progress — just go back to timer
+  if (brewInProgress()) {
     showScreen('timerScreen');
   } else {
-    startBrew();
+    startBrew(); // fresh start — also after a completed brew
   }
 }
 
 function updateBrewBtn() {
-  const inProgress = timerRunning || elapsed > 0;
+  const inProgress = brewInProgress();
   document.getElementById('brewBtnLabel').textContent = inProgress ? 'Continue Brew' : 'Start Brewing';
   document.getElementById('brewBtn').style.background = inProgress ? '#2d7d72' : '';
 }
 
 function updateBrewingPill() {
   const pill = document.getElementById('brewingPill');
-  if (timerRunning || elapsed > 0) {
+  if (brewInProgress()) {
     pill.style.display = 'flex';
-    // Show countdown to next step — matches the ring
     if (brewSteps.length > 0 && currentStepIdx < brewSteps.length) {
       const step = brewSteps[currentStepIdx];
       const remaining = Math.max(0, step.duration - stepElapsed);
       const m = Math.floor(remaining / 60);
       const s = remaining % 60;
-      const label = remaining > 60
-        ? `☕ ${m}:${String(s).padStart(2,'0')}`
-        : `☕ ${remaining}s`;
-      document.getElementById('brewingPillTime').textContent = label.replace('☕ ', '');
+      document.getElementById('brewingPillTime').textContent = remaining > 60
+        ? `${m}:${String(s).padStart(2,'0')}`
+        : `${remaining}s`;
     }
   } else {
     pill.style.display = 'none';
@@ -1987,6 +1992,30 @@ function startBrew() {
   stepElapsed = 0;
   timerRunning = false;
   ringerWarnShown = false;
+
+  // Snapshot the recipe NOW — journal must record what was actually brewed,
+  // not whatever the settings say at save time
+  brewSnapshot = {
+    summary: brewSummaryText(),
+    settings: {
+      brewer: state.brewer,
+      inputMode: state.inputMode,
+      cups: state.cups,
+      cupSize: state.cupSize,
+      coffeeGrams: state.coffeeGrams,
+      ratio: state.ratio,
+      method: state.method,
+      roast: state.roast,
+      bloomDuration: state.bloomDuration,
+      steepMinutes: state.steepMinutes,
+      foursixBalance: state.foursixBalance,
+      foursixStrength: state.foursixStrength,
+    }
+  };
+
+  // Reset the save button from any previous brew
+  const saveBtn = document.querySelector('.done-banner button');
+  if (saveBtn) { saveBtn.textContent = 'Save to journal'; saveBtn.disabled = false; }
 
   const brewerLabel = state.brewer === 'chemex' ? 'Chemex' : state.brewer === 'frenchpress' ? 'French Press' : 'V60';
   const methodLabel = state.brewer === 'frenchpress' ? `${state.steepMinutes} min steep`
@@ -2157,7 +2186,7 @@ function renderTimerScreen() {
       document.getElementById('currentStepWater').textContent = 'Press';
       document.getElementById('currentStepNote').textContent = 'slowly — 20–25 seconds down';
     } else {
-      document.getElementById('currentStepWater').textContent = `${state.steepMinutes} min`;
+      document.getElementById('currentStepWater').textContent = `${Math.round(step.duration / 60)} min`;
       document.getElementById('currentStepNote').textContent = 'lid on, plunger up — don\'t touch';
     }
 
@@ -2189,7 +2218,7 @@ function renderTimerScreen() {
     const tStr = `${mins}:${String(secs).padStart(2,'0')}`;
     const waterLabel = step.water > 0
       ? `${step.water}g this step → ${cumWater}g on scale`
-      : step.label === 'Press' ? 'press slowly' : `${state.steepMinutes} min steep`;
+      : step.label === 'Press' ? 'press slowly' : `${Math.round(step.duration / 60)} min steep`;
     el.innerHTML = `
       <div class="step-dot">${i < currentStepIdx ? '✓' : i+1}</div>
       <div class="step-info">
@@ -2352,7 +2381,8 @@ function saveBrewPrompt() {
   ['ntGrindFiner','ntGrindCoarser','ntCoffeeMore','ntCoffeeLess'].forEach(id =>
     document.getElementById(id).classList.remove('on')
   );
-  document.getElementById('modalSummary').textContent = brewSummaryText();
+  // Show the snapshot taken at brew start — not live settings
+  document.getElementById('modalSummary').textContent = brewSnapshot ? brewSnapshot.summary : brewSummaryText();
   document.getElementById('brewNotes').value = '';
   document.getElementById('saveModal').classList.add('open');
 }
@@ -2369,27 +2399,16 @@ function confirmSave() {
   const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
+  // Record what was actually brewed (snapshot), never live state
+  const snap = brewSnapshot || { summary: brewSummaryText(), settings: null };
   const entry = {
     id: Date.now(),
     date: `${dateStr} · ${timeStr}`,
-    summary: brewSummaryText(),
+    summary: snap.summary,
     notes,
     nextTimeGrind,
     nextTimeCoffee,
-    settings: {
-      brewer: state.brewer,
-      inputMode: state.inputMode,
-      cups: state.cups,
-      cupSize: state.cupSize,
-      coffeeGrams: state.coffeeGrams,
-      ratio: state.ratio,
-      method: state.method,
-      roast: state.roast,
-      bloomDuration: state.bloomDuration,
-      steepMinutes: state.steepMinutes,
-      foursixBalance: state.foursixBalance,
-      foursixStrength: state.foursixStrength,
-    }
+    settings: snap.settings,
   };
 
   entries.unshift(entry);
